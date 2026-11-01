@@ -76,5 +76,6 @@
   "quitCancel": "계속 플레이",
   "roundsLabel": "3라운드",
   "pointsLabel": "점",
-  "cardNumber": "{number}번 카드"
+  "cardNumber": "{number}번 카드",
+  "metaDescription": "영어와 한국어를 지원하는 결합 카드 게임입니다."
 }
