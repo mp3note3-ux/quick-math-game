@@ -88,6 +88,7 @@ function header({ showQuit = false } = {}) {
 function render() {
   document.documentElement.lang = i18n.getLocale();
   document.title = t("appName");
+  document.querySelector('meta[name="description"]')?.setAttribute("content", t("metaDescription"));
   if (state.screen === "game") {
     root.innerHTML = renderGame();
   } else if (state.screen === "results") {
