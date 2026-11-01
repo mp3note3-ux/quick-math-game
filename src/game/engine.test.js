@@ -38,7 +38,7 @@ test("isCombination rejects a mixed attribute", () => {
   assert.equal(isCombination([
     { s: 0, c: 0, b: 0 },
     { s: 0, c: 1, b: 1 },
-    { s: 0, c: 2, b: 2 },
+    { s: 1, c: 2, b: 2 },
   ]), false);
 });
 
