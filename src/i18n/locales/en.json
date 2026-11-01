@@ -76,5 +76,6 @@
   "quitCancel": "Keep playing",
   "roundsLabel": "3 rounds",
   "pointsLabel": "points",
-  "cardNumber": "Card {number}"
+  "cardNumber": "Card {number}",
+  "metaDescription": "An English-first combination card game with English and Korean language support."
 }
