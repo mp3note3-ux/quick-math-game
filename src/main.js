@@ -70,18 +70,29 @@ function languageSwitcher() {
   `;
 }
 
-function header({ showQuit = false } = {}) {
+// The title screen already shows the game name as a logo, so it hides the brand link.
+function header({ showQuit = false, showBrand = true } = {}) {
   return `
-    <header class="topbar">
-      <a class="brand" href="#" data-action="home" aria-label="${t("appName")} ${t("home")}">
-        <span class="brand-mark" aria-hidden="true">✦</span>
-        <span>${t("appName")}</span>
-      </a>
+    <header class="topbar ${showBrand ? "" : "topbar-end"}">
+      ${showBrand ? `
+        <a class="brand" href="#" data-action="home" aria-label="${t("appName")} ${t("home")}">
+          <span class="brand-mark" aria-hidden="true">♦</span>
+          <span>${t("appName")}</span>
+        </a>` : ""}
       <div class="topbar-actions">
         ${languageSwitcher()}
-        ${showQuit ? `<button class="button button-quiet button-small" type="button" data-action="quit">${t("quit")}</button>` : ""}
+        ${showQuit ? `<button class="button button-small" type="button" data-action="quit">${t("quit")}</button>` : ""}
       </div>
     </header>
+  `;
+}
+
+function hudCell(label, value, className = "") {
+  return `
+    <div class="hud-cell ${className}">
+      ${label ? `<span class="hud-label">${label}</span>` : ""}
+      <strong class="hud-value">${value}</strong>
+    </div>
   `;
 }
 
@@ -99,83 +110,47 @@ function render() {
 }
 
 function renderHome() {
+  const steps = [1, 2, 3].map((n) => `
+    <li>
+      <span class="num">${n}</span>
+      <div>
+        <strong>${t(`howToStep${["One", "Two", "Three"][n - 1]}Title`)}</strong>
+        <p>${t(`howToStep${["One", "Two", "Three"][n - 1]}Body`)}</p>
+      </div>
+    </li>
+  `).join("");
+
   return `
-    <div class="page-shell">
-      ${header()}
+    <div class="screen">
+      ${header({ showBrand: false })}
       <main>
-        <section class="hero">
-          <p class="eyebrow">${t("homeEyebrow")}</p>
-          <h1>${t("homeTitle")}</h1>
-          <p class="hero-copy">${t("homeSubtitle")}</p>
+        <section class="title-logo">
+          <h1>${t("appName")}</h1>
+          <p>${t("tagline")}</p>
         </section>
 
-        <section class="mode-grid" aria-label="${t("appName")}">
-          <article class="mode-card mode-card-featured">
-            <div class="mode-icon" aria-hidden="true">✦</div>
-            <div>
-              <p class="card-kicker">${t("singlePlayerTitle")}</p>
-              <h2>${t("singlePlayerTitle")}</h2>
-              <p class="muted-copy">${t("singlePlayerDescription")}</p>
-            </div>
-            <form id="start-form" class="start-form">
-              <label for="player-name">${t("playerNameLabel")}</label>
-              <input id="player-name" name="playerName" maxlength="18" autocomplete="nickname"
-                placeholder="${t("playerNamePlaceholder")}" value="${escapeHtml(state.playerName)}" required />
-              <button class="button button-primary button-wide" type="submit">
-                ${t("startSinglePlayer")} <span aria-hidden="true">→</span>
-              </button>
-            </form>
-          </article>
-
-          <article class="mode-card mode-card-muted">
-            <div class="mode-icon mode-icon-muted" aria-hidden="true">◎</div>
-            <div class="mode-heading-row">
-              <div>
-                <p class="card-kicker">${t("multiplayerTitle")}</p>
-                <h2>${t("multiplayerTitle")}</h2>
+        <div class="title-grid">
+          <section class="window" aria-label="${t("singlePlayerTitle")}">
+            <form id="start-form">
+              <div class="name-field">
+                <label for="player-name">${t("playerNameLabel")}</label>
+                <input id="player-name" name="playerName" maxlength="18" autocomplete="nickname"
+                  placeholder="${t("playerNamePlaceholder")}" value="${escapeHtml(state.playerName)}" required />
               </div>
-              <span class="status-pill">${t("comingSoon")}</span>
-            </div>
-            <p class="muted-copy">${t("multiplayerDescription")}</p>
-            <p class="notice-copy">${t("multiplayerNotReady")}</p>
-            <button class="button button-disabled button-wide" type="button" disabled>
-              ${t("multiplayerTitle")}
+              <button class="menu-item menu-item-primary" type="submit">${t("startSinglePlayer")}</button>
+            </form>
+            <button class="menu-item" type="button" disabled title="${escapeHtml(t("multiplayerNotReady"))}">
+              <span>${t("multiplayerTitle")}</span>
+              <span class="tag">${t("comingSoon")}</span>
             </button>
-          </article>
-        </section>
+          </section>
 
-        <section class="how-to panel">
-          <div class="section-heading">
-            <p class="eyebrow">${t("howToTitle")}</p>
-            <h2>${t("howToTitle")}</h2>
-          </div>
-          <div class="steps-grid">
-            <article class="step">
-              <span class="step-number">01</span>
-              <h3>${t("howToStepOneTitle")}</h3>
-              <p>${t("howToStepOneBody")}</p>
-            </article>
-            <article class="step">
-              <span class="step-number">02</span>
-              <h3>${t("howToStepTwoTitle")}</h3>
-              <p>${t("howToStepTwoBody")}</p>
-            </article>
-            <article class="step">
-              <span class="step-number">03</span>
-              <h3>${t("howToStepThreeTitle")}</h3>
-              <p>${t("howToStepThreeBody")}</p>
-            </article>
-          </div>
-          <div class="rule-note">
-            <span aria-hidden="true">ⓘ</span>
-            <div>
-              <strong>${t("ruleExampleTitle")}</strong>
-              <p>${t("ruleExampleBody")}</p>
-            </div>
-          </div>
-        </section>
+          <section class="window" aria-label="${t("howToTitle")}">
+            <h2 class="window-title">${t("howToTitle")}</h2>
+            <ol class="rules">${steps}</ol>
+          </section>
+        </div>
       </main>
-      <footer class="site-footer">${t("footerNote")}</footer>
     </div>
   `;
 }
@@ -206,7 +181,9 @@ function cardMarkup(card, index) {
       aria-pressed="${selected}" ${state.roundComplete || !state.selecting ? "disabled" : ""}
       style="--card-background:${background};--shape-color:${shapeColor}">
       <span class="card-number">${index + 1}</span>
-      <span class="card-shape ${shapeKey.replace("shape", "").toLowerCase()}" aria-hidden="true"></span>
+      <span class="shape-wrap" aria-hidden="true">
+        <span class="card-shape ${shapeKey.replace("shape", "").toLowerCase()}"></span>
+      </span>
     </button>
   `;
 }
@@ -214,118 +191,81 @@ function cardMarkup(card, index) {
 function foundMarkup() {
   if (state.found.size === 0) return `<p class="empty-state">${t("foundNone")}</p>`;
   return [...state.found].map((key) => `
-    <span class="found-chip">[ ${key.split(",").map((index) => Number(index) + 1).join(", ")} ]</span>
+    <span class="found-chip">${key.split(",").map((index) => Number(index) + 1).join("-")}</span>
   `).join("");
 }
 
 function renderGame() {
   const remaining = remainingCombinations().length;
-  const selectionMessage = state.selecting
+
+  // One dialogue box for both the selection prompt and the result of the last action.
+  const dialogText = state.selecting
     ? t("selectionProgress", { count: state.selection.length })
-    : t("selectionReady");
+    : state.feedback || t("boardInstruction");
+  const dialogType = state.selecting || !state.feedback ? "info" : state.feedbackType;
+
+  const controls = state.roundComplete ? `
+    <div class="round-complete">
+      <div>
+        <h3>${t("roundCompleteTitle")}</h3>
+        <p>${t("roundCompleteBody")}</p>
+      </div>
+      <button class="button button-primary" type="button" data-action="next-round">
+        ${state.round === TOTAL_ROUNDS ? t("finishGame") : t("nextRound")}
+      </button>
+    </div>
+  ` : `
+    <div class="game-controls">
+      <button class="button button-primary ${state.selecting ? "" : "is-blink"}" type="button" data-action="start-selection"
+        ${state.selecting ? "disabled" : ""}>
+        ${t("callSet")}
+      </button>
+      <button class="button" type="button" data-action="cancel-selection" ${state.selecting ? "" : "disabled"}>
+        ${t("cancelSelection")}
+      </button>
+      <button class="button button-danger" type="button" data-action="call-no-sets">
+        ${t("callNoSets")}
+      </button>
+    </div>
+  `;
 
   return `
-    <div class="page-shell page-shell-game">
+    <div class="screen">
       ${header({ showQuit: true })}
-      <main class="game-main">
-        <section class="game-heading">
-          <div>
-            <p class="eyebrow">${t("boardTitle")}</p>
-            <h1>${t("roundLabel", { current: state.round, total: TOTAL_ROUNDS })}</h1>
-          </div>
-          <div class="score-display">
-            <span>${t("scoreLabel")}</span>
-            <strong>${state.score}</strong>
-            <small>${t("pointsLabel")}</small>
-          </div>
+      <main>
+        <section class="hud window" aria-label="${t("boardTitle")}">
+          ${hudCell("", t("roundLabel", { current: state.round, total: TOTAL_ROUNDS }), "hud-round")}
+          ${hudCell(t("scoreLabel"), state.score, "hud-score")}
+          ${hudCell(t("foundSetsLabel"), state.found.size)}
+          ${hudCell(t("remainingSetsLabel"), remaining)}
+          ${hudCell(t("playerNameLabel"), escapeHtml(state.playerName))}
         </section>
 
-        <section class="game-stats" aria-label="${t("boardTitle")}">
-          <div class="stat-card">
-            <span>${t("foundSetsLabel")}</span>
-            <strong>${state.found.size}</strong>
-          </div>
-          <div class="stat-card">
-            <span>${t("remainingSetsLabel")}</span>
-            <strong>${remaining}</strong>
-          </div>
-          <div class="stat-card stat-player">
-            <span>${t("playerNameLabel")}</span>
-            <strong>${escapeHtml(state.playerName)}</strong>
-          </div>
-        </section>
-
-        <section class="play-layout">
-          <div class="board-panel panel">
-            <div class="board-header">
-              <div>
-                <h2>${t("boardTitle")}</h2>
-                <p>${t("boardInstruction")}</p>
-              </div>
-              <span class="round-badge">${state.round} / ${TOTAL_ROUNDS}</span>
-            </div>
-
-            <div class="card-grid" aria-label="${t("boardTitle")}">
+        <div class="play-layout">
+          <section class="window" aria-label="${t("boardTitle")}">
+            <div class="card-grid">
               ${state.board.map(cardMarkup).join("")}
             </div>
+            <div class="dialog dialog-${dialogType}" role="status" aria-live="polite">${dialogText}</div>
+            ${controls}
+          </section>
 
-            <div class="selection-status" aria-live="polite">${selectionMessage}</div>
-
-            <div class="game-controls">
-              <button class="button button-primary" type="button" data-action="start-selection"
-                ${state.selecting || state.roundComplete ? "disabled" : ""}>
-                ${t("callSet")}
-              </button>
-              <button class="button button-secondary" type="button" data-action="cancel-selection"
-                ${!state.selecting || state.roundComplete ? "disabled" : ""}>
-                ${t("cancelSelection")}
-              </button>
-              <button class="button button-danger" type="button" data-action="call-no-sets"
-                ${state.roundComplete ? "disabled" : ""}>
-                ${t("callNoSets")}
-              </button>
-            </div>
-
-            ${state.feedback ? `<p class="feedback feedback-${state.feedbackType}" role="status">${state.feedback}</p>` : ""}
-
-            ${state.roundComplete ? `
-              <div class="round-complete">
-                <div>
-                  <h3>${t("roundCompleteTitle")}</h3>
-                  <p>${t("roundCompleteBody")}</p>
-                </div>
-                <button class="button button-primary" type="button" data-action="next-round">
-                  ${state.round === TOTAL_ROUNDS ? t("finishGame") : t("nextRound")} →
-                </button>
-              </div>
-            ` : ""}
-          </div>
-
-          <aside class="found-panel panel">
-            <div class="found-heading">
-              <h2>${t("foundSetsLabel")}</h2>
-              <span class="count-badge">${state.found.size}</span>
-            </div>
+          <aside class="window" aria-label="${t("foundSetsLabel")}">
+            <h2 class="window-title">${t("foundSetsLabel")}</h2>
             <div class="found-list">${foundMarkup()}</div>
-            <div class="found-summary">
-              <span>${t("remainingSetsLabel")}</span>
-              <strong>${remaining}</strong>
-            </div>
           </aside>
-        </section>
+        </div>
       </main>
-      <footer class="site-footer">${t("footerNote")}</footer>
     </div>
   `;
 }
 
 function renderResults() {
   return `
-    <div class="page-shell">
+    <div class="screen">
       ${header()}
-      <main class="results-main panel">
-        <div class="results-icon" aria-hidden="true">✦</div>
-        <p class="eyebrow">${t("resultsTitle")}</p>
+      <main class="results window">
+        <p class="window-title">${t("resultsTitle")}</p>
         <h1>${t("resultsSubtitle", { name: escapeHtml(state.playerName) })}</h1>
         <div class="final-score">
           <span>${t("finalScore")}</span>
@@ -333,21 +273,14 @@ function renderResults() {
           <small>${t("pointsLabel")}</small>
         </div>
         <div class="results-stats">
-          <div class="stat-card">
-            <span>${t("roundsCompleted")}</span>
-            <strong>${state.roundsCompleted} / ${TOTAL_ROUNDS}</strong>
-          </div>
-          <div class="stat-card">
-            <span>${t("totalSetsFound")}</span>
-            <strong>${state.totalSetsFound}</strong>
-          </div>
+          ${hudCell(t("roundsCompleted"), `${state.roundsCompleted} / ${TOTAL_ROUNDS}`)}
+          ${hudCell(t("totalSetsFound"), state.totalSetsFound)}
         </div>
         <div class="results-actions">
           <button class="button button-primary" type="button" data-action="play-again">${t("playAgain")}</button>
-          <button class="button button-secondary" type="button" data-action="home">${t("returnHome")}</button>
+          <button class="button" type="button" data-action="home">${t("returnHome")}</button>
         </div>
       </main>
-      <footer class="site-footer">${t("footerNote")}</footer>
     </div>
   `;
 }
@@ -476,6 +409,7 @@ root.addEventListener("click", (event) => {
 
   switch (actionButton.dataset.action) {
     case "home":
+      event.preventDefault();
       state.screen = "home";
       render();
       break;
