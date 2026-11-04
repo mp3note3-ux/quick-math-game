@@ -1,126 +1,139 @@
 # Kimi K3 / Claude Code Project Instructions
 
-These instructions are for **Kimi K3 running inside the Claude Code harness**. The harness is the coding interface; the model is Kimi K3. Follow the repository's current source of truth rather than assuming a generic Claude Code project layout.
+These instructions are for **Kimi K3 running inside the Claude Code harness**. The harness is the coding interface; the model is Kimi K3.
 
-## 1. Start here every session
+## 1. Start every session by inspecting the current project
 
 Before changing code:
 
-1. Read this file completely.
-2. Read `GAME_DESIGN_IMPROVEMENT.md` for approved product direction, scoring research, architecture guidance, scope boundaries, and acceptance criteria.
-3. Read `README.md` and `HANDOFF_FOR_NEXT_LLM.md` for the currently implemented behavior.
-4. Inspect the actual working tree, package scripts, source files, tests, and recent git history. These documents may lag behind the code.
-5. Summarize the current state and the intended change briefly before making a broad or risky change. Do not ask for confirmation for routine, clearly requested implementation tasks.
+1. Read this file.
+2. Read `GAME_DESIGN_IMPROVEMENT.md` for the current product priorities and the separate single-player/multiplayer roadmaps.
+3. Read `README.md` and `HANDOFF_FOR_NEXT_LLM.md` for current implementation status.
+4. Inspect the actual working tree, package scripts, source files, tests, and recent git history. Documentation can lag behind code.
+5. Run relevant existing checks before broad changes when feasible.
 
-Do not assume a planned feature exists just because it appears in a design document. Verify it in code.
+Never assume a feature exists because it is described in a proposal. Verify the implementation. Be clear about what is implemented versus planned.
 
-## 2. Product direction and scope control
+## 2. Product direction — solo experience is now the immediate priority
 
-The product is an independent browser implementation of the Korean pattern-recognition card game **반짝 ✨ 결! 합!**.
+The product is an independent browser implementation of the three-attribute pattern-recognition game **반짝 ✨ 결! 합!**.
 
-The product owner approved these technology and scope decisions:
+Approved technical foundation:
+- React + TypeScript, strict mode.
+- Vite.
+- CSS organized into design tokens, global styles, and component styles.
+- Framework-independent pure domain logic.
+- Local browser persistence for the current single-player product, behind typed/versioned storage adapters.
+- English and Korean localization.
+- Vitest and Playwright coverage, following existing project conventions.
 
-- React + TypeScript for the frontend.
-- Keep Vite as the build tool.
-- Keep CSS; organize it into reusable design tokens, global styles, and component-oriented conventions.
-- Stage 1 progress persistence is local to the browser, behind a typed storage abstraction.
-- Stage 1 is the core classic single-player revamp and foundations only.
-- Stage 2 multiplayer and advanced modes are deferred until Stage 1 is accepted and the owner explicitly authorizes Stage 2.
+The previous Stage 1 completed the technical foundation. The owner has clarified that the next work must create a noticeably richer player experience. The immediate roadmap is **single-player content, scoring, meaningful mastery progression, GUI Settings, and quality-of-life**.
 
-### Stage 1 — permitted target
+Do not treat all advanced/optional modes as multiplayer-only. Modes such as Practice/Academy, Sprint/Time Attack, Prism Contracts, Endurance, Daily Challenge, Constellation Chain, and Ghost Run are candidates for **solo implementation now**. Refer to the design brief for order and scope.
 
-When the owner asks you to implement Stage 1 work, focus on:
+### Multiplayer-only deferral
 
-- React + TypeScript migration while retaining Vite.
-- Framework-independent, pure domain modules for cards, boards, combinations, sessions, difficulty, scoring, and progression.
-- Difficulty classification and scoring simulations with tests.
-- Fair solo scoring; avoid rewarding inactivity as a competitive victory.
-- Minimal local mastery XP and personal statistics, separate from match score.
-- Polished responsive solo UI, clear feedback, results, and settings.
-- English and Korean localization, accessibility, and offline/local play.
-- Unit, integration, and browser tests.
+Only online/multiplayer infrastructure and competitive classroom features remain deferred until explicitly authorized:
+- Rooms, room codes, host/student roles, presence, realtime sync, server/backend/database/auth/cloud persistence.
+- Server-authoritative claim order, scoring, timers, cooldowns, reconnects, online rankings and class/team results.
+- Class Raid, Rival Duel, multiplayer Ghost Board, teacher dashboard.
 
-Prefer incremental, reviewable changes. Keep the game playable throughout the migration where practical.
+The concern that inactive players may outrank active players belongs primarily to multiplayer ranking/eligibility. Do not impose competitive inactivity penalties on solo players. Solo players may pause, think, or leave without being framed as cheaters. Solo scoring should reward meaningful play and create satisfying challenge, not solve a nonexistent opponent exploit.
 
-### Stage 2 — do not implement during Stage 1
+## 3. Core game rules
 
-Do not implement multiplayer rooms, host/student roles, room codes, realtime networking, server/backend/database/auth/cloud save, synchronized claims, online rankings, or the advanced modes (Prism Contracts, Constellation Chain, Class Raid, Rival Duel, Ghost Board, quests, expanded cosmetics/achievements) unless the owner explicitly starts Stage 2.
+- 27 unique cards: 3 shapes × 3 shape colors × 3 background colors.
+- Standard board: 9 distinct cards.
+- A valid combination has exactly 3 distinct cards.
+- For each of the three attributes independently, values must be all identical or all different.
+- A 2+1 attribute split makes a triple invalid.
 
-Do not add mock networking or pretend local storage is authoritative for competitive multiplayer. It is not.
+Preserve this rule unless the owner explicitly approves a variant. Keep the game recognizable and understandable.
 
-## 3. Invariant game rules
+The original host game includes a post-**합!** selection timer and a wrong-claim cooldown. Those are multiplayer/host controls. Do not mistake them for a solo countdown. Solo Sprint may have its own explicit time limit and rules.
 
-The current game has 27 unique cards: 3 shapes × 3 shape colors × 3 background colors. A board contains 9 distinct cards.
+## 4. Next player-facing work
 
-A valid combination contains exactly 3 distinct cards. For each of the three attributes independently, the values must be either all identical or all different. A 2+1 split on any attribute makes the combination invalid.
+The design brief is the detailed specification. The key priorities are:
 
-Preserve the game's recognizable visual identity and simple core rule. Do not silently change game rules, language support, or player experience. If a rule is ambiguous, inspect the current implementation and design brief, then state the assumption.
+1. **Scoring redesign:** difficulty-aware rewards, a clear score breakdown, board-clear and carefully tested mode bonuses, mode-sensitive mistake consequences, and localized feedback.
+2. **Meaningful mastery:** difficulty-aware XP, mastery ranks and next-rank progress, milestones/achievements, personal bests, and progress awarded/persisted at verified board checkpoints so early exit does not erase earned progress.
+3. **GUI Settings:** a first-class accessible settings screen from home and during solo play, with live preview and persistence.
+4. **Solo content:** deliver complete modes, not menu placeholders. Recommended starting order is Practice/Academy, Sprint/Time Attack, then Prism Contracts, followed by Endurance, Daily Challenge, and Constellation Chain.
+5. **Quality-of-life:** pause/resume where appropriate, replay/same-board practice, mode-specific records, clearer results, hints, useful feedback, accessibility, responsive controls, and visible storage status/errors.
 
-The original game's teacher/host options include total rounds, a selection time limit after a player calls **합!**, and a wrong-answer waiting/penalty interval. These are multiplayer/host concepts; do not turn them into a solo round countdown without explicit product direction.
+### GUI Settings requirements
 
-## 4. Architecture and code quality
+Settings should be player-facing and allow users to change preferences without editing files or code. Initial categories can include:
+- General/language.
+- Appearance: a small curated set of themes, card size/style, UI/text scale, spacing/layout.
+- Accessibility: high contrast, color-vision-friendly palette, reduced motion, disabling scanlines/flashing, visible selection emphasis, keyboard help.
+- Feedback/hints.
+- Supported solo gameplay defaults and mode preferences.
+- Audio controls only for audio features that actually exist.
+- Data: local-save status, reset preferences, and carefully confirmed progress export/import/reset where implemented.
 
-- Keep domain logic independent of React, the DOM, browser storage, and network APIs.
-- Use TypeScript types at module boundaries; avoid `any` unless justified and contained.
-- Keep UI components focused and reusable. Keep orchestration/state transitions out of presentation-only components.
-- Use React state/reducer first. Do not introduce Redux or another state library without demonstrated need.
-- Put browser persistence behind a typed repository/adapter. Include a schema version, runtime validation, and safe handling for missing, malformed, outdated, or unavailable storage.
-- Make local-only persistence limitations clear in the UI/docs: progress belongs to this browser/device and is not cloud-synced.
-- Keep English and Korean locale keys aligned. Add all user-visible copy to both catalogs; avoid hard-coded UI strings.
-- Preserve keyboard access, visible focus, semantic controls, sufficient contrast, and responsive layouts.
-- Avoid unnecessary dependencies, premature abstractions, speculative features, and unrelated refactors.
+Preferences must preview appropriately, persist locally with validation/versioning, and be localized in English and Korean. Appearance/accessibility settings must never alter score eligibility. Keep the first version curated and useful; do not build an unbounded theme editor.
+
+## 5. Scoring and XP discipline
+
+The current repository has a configurable scoring module, a structural difficulty level (number of all-different attributes), and a basic local XP/stat foundation. These are **not finished player-facing systems**.
+
+Historically observed defaults are flat +1 for any correct set, -1 for an incorrect set, and +3 for a correct no-sets declaration. Verify current code before changing these. The proposed difficulty rewards and XP values in the design brief are candidates, not final balance decisions.
+
+Rules:
+- Test Level 1/2/3 rewards; do not assume the classification is equivalent to measured human difficulty.
+- The current scoring simulation has limitations described in the design brief. Improve it before using it to lock balance values.
+- Simulations are hypotheses; human playtesting is required.
+- Separate solo Match Score from persistent Mastery XP and future multiplayer results/team progress.
+- Avoid opaque or excessive multipliers. Each point change must be explainable.
+- Mistake consequences should vary by solo mode: Practice should be safe for learning; Sprint may use time/chain costs; Endurance may use lives; Classic may use a modest cost.
+- Correct board-clear reward must not encourage skipping difficult sets.
+- XP should be earned for verified skill outcomes and not lost when a player exits after a saved board checkpoint.
+- Make saves idempotent: reload/retry must not duplicate XP. Prevent trivial replay/seed farming without punishing legitimate practice.
+- Do not award XP for opening the app, waiting, or button spam.
+- Do not let a solo pause cause competitive penalties.
+
+Do not silently change scoring defaults until the relevant experiment, tests, and product decision are documented.
+
+## 6. Architecture and quality
+
+- Keep `src/domain/` independent of React, DOM, localStorage, and network APIs.
+- Keep settings preferences and UI concerns outside pure game-rule modules.
+- Use typed, versioned local repositories with runtime validation and migration paths. Handle malformed values, blocked storage, quota errors, and failed saves visibly.
+- Persist verified XP/stat checkpoints exactly once.
+- Keep mode scoring rules explicit and comparable records scoped by mode/ruleset/settings where needed.
+- Keep EN/KO locale keys and placeholders aligned; add every visible string to both catalogs.
+- Preserve accessibility: semantic controls, keyboard navigation, visible focus, sufficient contrast, useful screen-reader feedback, reduced motion, and mobile touch targets.
+- Use React state/reducer first; do not introduce Redux or a new dependency without a clear need.
+- Avoid premature abstractions, empty folders, unrelated refactors, mock networking, and unnecessary dependencies.
 - Do not copy proprietary source code or assets from the reference site.
 
-Suggested boundaries are described in the design brief. Adapt them to the actual codebase; do not create empty directories or layers without a real use.
+Use the existing architecture where it fits. Suggested new boundaries in the design brief are guidance, not mandatory directory creation.
 
-## 5. Scoring and progression discipline
-
-The design brief proposes difficulty levels based on the number of attributes that are all-different:
-
-- Level 1: one all-different attribute and two all-same attributes.
-- Level 2: two all-different attributes and one all-same attribute.
-- Level 3: all three attributes all-different.
-
-Treat this as a testable hypothesis for this three-attribute game, not a proven difficulty truth. Validate with simulations and playtesting before locking point values.
-
-Keep match score, persistent mastery XP, and any future team/class progress as separate concepts. Do not award points merely for presence, clicks, or inactivity. Test against idle play, random guessing, repeated submissions, and other easy exploits. Avoid negative-score edge cases unless intentionally specified. Explain score changes clearly to the player.
-
-Do not add scarcity bonuses or other difficulty multipliers without evidence. Track board set counts and solve outcomes first if needed.
-
-## 6. Working method
+## 7. Development workflow
 
 For each task:
 
-1. Identify the smallest coherent change that fulfills the request.
-2. Inspect affected code and existing conventions before editing.
-3. Implement the behavior, not just a visual mock-up.
-4. Add or update tests for normal cases, edge cases, and regressions.
-5. Run the relevant tests, then the full test suite and production build when feasible.
-6. Review the diff for accidental scope creep, dead code, broken translations, accessibility regressions, and misleading documentation.
-7. Report exactly what changed, commands/tests run and their results, and anything not completed.
+1. Identify the smallest coherent player-facing change.
+2. Inspect affected code and conventions.
+3. Implement a complete user-visible behavior, not just a screen or placeholder.
+4. Add tests for normal cases, edge cases, persistence, and regressions.
+5. Run relevant tests, then `npm test`, `npm run build`, and `npm run test:e2e` when feasible.
+6. Review the diff for EN/KO parity, accessibility, responsive behavior, storage safety, and scope creep.
+7. Report exactly what changed, what commands ran, their results, and anything incomplete.
 
-Never claim tests passed unless you actually ran them. If a command fails because dependencies or the environment are unavailable, report that accurately and give the next useful step.
+Do not claim tests passed unless run. Use package scripts from the current `package.json`.
 
-Use the package manager and scripts declared by the current `package.json`; do not assume scripts from this document. Do not rewrite lockfiles or upgrade dependencies without need.
+## 8. Git and safety
 
-## 7. Git and safety
-
+- Inspect `git status` before and after work.
 - Do not discard user changes, reset branches, force-push, or rewrite history.
-- Inspect `git status` before edits and before commits.
 - Do not commit or push unless the owner explicitly asks.
-- Never expose secrets, tokens, local environment values, or private user data in logs, code, commits, or responses.
-- Do not add credentials or real API keys to the repository.
-- Keep commits focused and use descriptive messages when asked to commit.
-- If remote state conflicts with local state, inspect and reconcile; do not overwrite blindly.
+- Never expose secrets, tokens, local environment values, or personal data.
+- Keep commits focused and descriptive when asked.
+- Reconcile remote/local conflicts; never overwrite blindly.
 
-## 8. Communication
+## 9. Communication
 
-Be direct and concise. Distinguish clearly between:
-- implemented behavior,
-- existing behavior,
-- planned proposals,
-- deferred Stage 2 ideas.
-
-When a design choice materially affects fairness, accessibility, persistence, architecture, or future multiplayer compatibility, explain the trade-off and recommend a defensible default. Do not silently invent product decisions.
-
-The owner may give task-specific instructions that supersede these defaults, but a task-specific request to implement one feature does not automatically authorize the entire deferred Stage 2 roadmap.
+Be direct. Separate implemented behavior, existing limitations, recommended design, and deferred multiplayer work. Do not describe a technical foundation as a finished gameplay feature. Do not ask the owner to repeat decisions already present in the design brief. A request to build a solo mode or Settings GUI does not authorize multiplayer infrastructure.
