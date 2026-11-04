@@ -12,6 +12,8 @@ Before changing code:
 4. Inspect the actual working tree, package scripts, source files, tests, and recent git history. Documentation can lag behind code.
 5. Run relevant existing checks before broad changes when feasible.
 
+For the current owner-directed XP visibility, remaining-set reveal, Rules, and Settings pass, also read `KIMI_TASK_XP_RULES_SETTINGS.md`. It is a scoped task brief that supplements this file and the v3.0 roadmap.
+
 Never assume a feature exists because it is described in a proposal. Verify the implementation. Be clear about what is implemented versus planned.
 
 ## 2. Product direction — solo experience is now the immediate priority
