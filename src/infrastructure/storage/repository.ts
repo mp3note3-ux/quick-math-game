@@ -74,6 +74,22 @@ export function createProfileRepository(
   return createLocalStorageRepository(PROFILE_STORAGE_KEY, validateProfile, storage ?? browserStorage());
 }
 
+const STORAGE_PROBE_KEY = "combination-game-storage-probe";
+
+/**
+ * Non-destructive availability check: tries one tiny write. Used by Settings
+ * to report honestly whether progress can persist in this browser.
+ */
+export function probeStorageAvailable(storage: StorageLike | null = browserStorage()): boolean {
+  if (storage === null) return false;
+  try {
+    storage.setItem(STORAGE_PROBE_KEY, "1");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Reads the Stage-0 standalone player-name key for one-time migration into
  * the profile. Returns "" when absent or storage is unavailable.

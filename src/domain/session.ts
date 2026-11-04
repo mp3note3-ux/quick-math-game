@@ -27,6 +27,7 @@ import {
   outcomeForDuplicateSet,
   outcomeForNoSetsCorrect,
   outcomeForNoSetsWrong,
+  outcomeForRevealRemaining,
   outcomeForWrongSet,
   type ScoreOutcome,
   type ScoringConfig,
@@ -76,6 +77,13 @@ export interface SessionState {
    * the player exits before the session finishes.
    */
   roundSetCounts: Array<[number, number, number]>;
+  /**
+   * Whether the exact remaining-set count has been revealed on the current
+   * board — either by paying the one-time reveal cost or by making an
+   * incorrect "No sets left!" claim (whose penalty already bought the
+   * information). Reset on every new board.
+   */
+  countRevealed: boolean;
   config: ScoringConfig;
 }
 
@@ -85,6 +93,7 @@ export type SessionEvent =
   | { type: "cancel-selection" }
   | { type: "toggle-card"; index: number }
   | { type: "declare-no-sets" }
+  | { type: "reveal-remaining" }
   | { type: "next-round" }
   | { type: "restart"; board?: Card[] };
 
@@ -106,6 +115,7 @@ export function createInitialState(
     totalSetsFound: 0,
     setsFoundByLevel: [0, 0, 0],
     roundSetCounts: [],
+    countRevealed: false,
     config,
   };
 }
@@ -141,6 +151,7 @@ function beginRound(
     selection: [],
     selecting: false,
     feedback: null,
+    countRevealed: false,
   };
 }
 
@@ -200,6 +211,9 @@ function declareNoSets(state: SessionState): SessionState {
     return {
       ...state,
       score: applyOutcome(state.score, outcome, state.config),
+      // The wrong-claim penalty already paid for this information, so the
+      // count stays visible for the rest of the board (no second reveal fee).
+      countRevealed: true,
       feedback: { kind: outcome.kind, delta: outcome.delta, remaining },
     };
   }
@@ -213,6 +227,27 @@ function declareNoSets(state: SessionState): SessionState {
     selecting: false,
     selection: [],
     feedback: { kind: outcome.kind, delta: outcome.delta },
+  };
+}
+
+/**
+ * Paid information reveal: shows the exact undiscovered-set count for the
+ * rest of the board at the configured one-time cost. Available once per
+ * board; subsequent requests are ignored (never charged twice). Disabled
+ * mid-selection so a reveal cannot interrupt a three-card pick.
+ */
+function revealRemaining(state: SessionState): SessionState {
+  if (state.countRevealed) return state;
+  const outcome = outcomeForRevealRemaining(state.config);
+  return {
+    ...state,
+    score: applyOutcome(state.score, outcome, state.config),
+    countRevealed: true,
+    feedback: {
+      kind: outcome.kind,
+      delta: outcome.delta,
+      remaining: remainingCombinations(state).length,
+    },
   };
 }
 
@@ -261,6 +296,11 @@ export function createSessionReducer(random: RandomSource = Math.random) {
       case "declare-no-sets": {
         if (state.phase !== "playing") return state;
         return declareNoSets(state);
+      }
+
+      case "reveal-remaining": {
+        if (state.phase !== "playing" || state.selecting) return state;
+        return revealRemaining(state);
       }
 
       case "next-round": {

@@ -24,6 +24,12 @@ export interface ScoringConfig {
   wrongNoSetsPenalty: number;
   /** Applied when "no sets left" is declared correctly; completes the round. */
   noSetsBonus: number;
+  /**
+   * Applied once per board when the player chooses to reveal the exact
+   * remaining-set count. Kept in config (never hard-coded in the UI) so the
+   * information trade stays an explicit, tunable scored choice.
+   */
+  revealRemainingCost: number;
   /** Optional lower bound for the match score. `null` = no floor. */
   scoreFloor: number | null;
   /**
@@ -44,6 +50,7 @@ export const PROTOTYPE_SCORING_CONFIG: ScoringConfig = {
   wrongSetPenalty: -1,
   wrongNoSetsPenalty: -1,
   noSetsBonus: 3,
+  revealRemainingCost: -1,
   scoreFloor: null,
   eligibilityMinVerifiedSets: 1,
 };
@@ -60,6 +67,7 @@ export const DEFAULT_SCORING_CONFIG: ScoringConfig = {
   wrongSetPenalty: -1,
   wrongNoSetsPenalty: -1,
   noSetsBonus: 3,
+  revealRemainingCost: -1,
   scoreFloor: 0,
   eligibilityMinVerifiedSets: 1,
 };
@@ -69,7 +77,8 @@ export type ScoreOutcomeKind =
   | "wrong-set"
   | "duplicate-set"
   | "no-sets-correct"
-  | "no-sets-wrong";
+  | "no-sets-wrong"
+  | "reveal-remaining";
 
 export interface ScoreOutcome {
   kind: ScoreOutcomeKind;
@@ -101,6 +110,10 @@ export function outcomeForNoSetsCorrect(config: ScoringConfig): ScoreOutcome {
 
 export function outcomeForNoSetsWrong(config: ScoringConfig): ScoreOutcome {
   return { kind: "no-sets-wrong", delta: config.wrongNoSetsPenalty };
+}
+
+export function outcomeForRevealRemaining(config: ScoringConfig): ScoreOutcome {
+  return { kind: "reveal-remaining", delta: config.revealRemainingCost };
 }
 
 /** Applies an outcome to a score, honoring the configured floor. */

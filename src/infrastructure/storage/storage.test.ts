@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_PREFERENCES } from "../../domain/preferences";
 import { EMPTY_STATS } from "../../domain/progression";
 import {
   createLocalStorageRepository,
   loadInitialProfile,
+  probeStorageAvailable,
   readLegacyPlayerName,
   type StorageLike,
 } from "./repository";
@@ -49,6 +51,7 @@ const validProfile: StoredProfile = {
     sessionsCompleted: 2,
     bestScore: -2,
   },
+  preferences: { ...DEFAULT_PREFERENCES },
 };
 
 describe("validateProfile", () => {
@@ -119,5 +122,63 @@ describe("profile loading and legacy migration", () => {
   it("falls back to a default profile when storage is unavailable", () => {
     expect(loadInitialProfile(brokenStorage)).toEqual(defaultProfile());
     expect(readLegacyPlayerName(brokenStorage)).toBe("");
+  });
+});
+
+describe("schema v1 → v2 migration", () => {
+  /** The shape actually stored by the deployed v1 build (no preferences). */
+  const v1Profile = {
+    schemaVersion: 1,
+    playerName: "Jin",
+    mastery: validProfile.mastery,
+  };
+
+  it("migrates a v1 profile, keeping name and mastery and adding default preferences", () => {
+    const migrated = validateProfile(v1Profile);
+    expect(migrated).not.toBeNull();
+    expect(migrated!.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
+    expect(migrated!.playerName).toBe("Jin");
+    expect(migrated!.mastery).toEqual(validProfile.mastery);
+    expect(migrated!.preferences).toEqual(DEFAULT_PREFERENCES);
+  });
+
+  it("keeps valid stored preferences on a v2 profile", () => {
+    const custom = {
+      ...validProfile,
+      preferences: { ...DEFAULT_PREFERENCES, theme: "high-contrast", cardSize: "large" },
+    };
+    const result = validateProfile(custom);
+    expect(result!.preferences.theme).toBe("high-contrast");
+    expect(result!.preferences.cardSize).toBe("large");
+  });
+
+  it("falls back to default preferences when they are malformed, without losing mastery", () => {
+    const result = validateProfile({ ...validProfile, preferences: "not-an-object" });
+    expect(result).not.toBeNull();
+    expect(result!.preferences).toEqual(DEFAULT_PREFERENCES);
+    expect(result!.mastery).toEqual(validProfile.mastery);
+  });
+
+  it("sanitizes individual invalid preference values", () => {
+    const result = validateProfile({
+      ...validProfile,
+      preferences: { theme: "neon", cardSize: "huge", scanlines: "yes", uiScale: "small" },
+    });
+    expect(result!.preferences.theme).toBe(DEFAULT_PREFERENCES.theme);
+    expect(result!.preferences.cardSize).toBe(DEFAULT_PREFERENCES.cardSize);
+    expect(result!.preferences.scanlines).toBe(DEFAULT_PREFERENCES.scanlines);
+    expect(result!.preferences.uiScale).toBe("small");
+  });
+
+  it("rejects profiles with corrupt mastery even when preferences are fine", () => {
+    expect(validateProfile({ ...validProfile, mastery: { xp: -5 } })).toBeNull();
+  });
+});
+
+describe("probeStorageAvailable", () => {
+  it("reports true for working storage and false for blocked storage", () => {
+    expect(probeStorageAvailable(fakeStorage())).toBe(true);
+    expect(probeStorageAvailable(brokenStorage)).toBe(false);
+    expect(probeStorageAvailable(null)).toBe(false);
   });
 });

@@ -2,10 +2,20 @@
  * Stored profile schema and validation. Hand-rolled validators (no schema
  * dependency): the profile is small, and invalid data must never crash the
  * app — it falls back to a default profile instead.
+ *
+ * Schema history:
+ * - v1: player name + mastery stats.
+ * - v2: adds cosmetic/accessibility `preferences`. v1 profiles migrate by
+ *   filling in default preferences; mastery data and player name are kept.
  */
+import {
+  DEFAULT_PREFERENCES,
+  validatePreferences,
+  type Preferences,
+} from "../../domain/preferences";
 import { EMPTY_STATS, type PersonalStats } from "../../domain/progression";
 
-export const PROFILE_SCHEMA_VERSION = 1;
+export const PROFILE_SCHEMA_VERSION = 2;
 export const PROFILE_STORAGE_KEY = "combination-game-profile";
 /** Stage-0 storage keys, kept for migration and for the locale manager. */
 export const LEGACY_PLAYER_NAME_KEY = "combination-game-player-name";
@@ -14,6 +24,7 @@ export interface StoredProfile {
   schemaVersion: number;
   playerName: string;
   mastery: PersonalStats;
+  preferences: Preferences;
 }
 
 export function defaultProfile(playerName = ""): StoredProfile {
@@ -21,6 +32,7 @@ export function defaultProfile(playerName = ""): StoredProfile {
     schemaVersion: PROFILE_SCHEMA_VERSION,
     playerName,
     mastery: { ...EMPTY_STATS, setsByLevel: [...EMPTY_STATS.setsByLevel] },
+    preferences: { ...DEFAULT_PREFERENCES },
   };
 }
 
@@ -68,19 +80,27 @@ export function validateStats(raw: unknown): PersonalStats | null {
 }
 
 /**
- * Validates parsed JSON as a StoredProfile. Returns null for anything
- * malformed or from an unsupported schema version — callers fall back to
- * `defaultProfile()` and simply overwrite storage on the next save.
+ * Validates parsed JSON as a StoredProfile, migrating older schema versions
+ * where possible. Returns null for anything malformed beyond repair — callers
+ * fall back to `defaultProfile()` and simply overwrite storage on next save.
+ *
+ * v1 → v2: keep the player name and mastery stats, add default preferences.
+ * Preferences are validated independently, so a corrupt preference block
+ * cannot erase otherwise valid mastery data (it falls back to defaults).
  */
 export function validateProfile(raw: unknown): StoredProfile | null {
   if (!isRecord(raw)) return null;
-  if (raw.schemaVersion !== PROFILE_SCHEMA_VERSION) return null;
   if (typeof raw.playerName !== "string") return null;
   const mastery = validateStats(raw.mastery);
   if (mastery === null) return null;
-  return {
-    schemaVersion: PROFILE_SCHEMA_VERSION,
-    playerName: raw.playerName,
-    mastery,
-  };
+
+  if (raw.schemaVersion === 1 || raw.schemaVersion === PROFILE_SCHEMA_VERSION) {
+    return {
+      schemaVersion: PROFILE_SCHEMA_VERSION,
+      playerName: raw.playerName,
+      mastery,
+      preferences: validatePreferences(raw.preferences),
+    };
+  }
+  return null;
 }

@@ -12,6 +12,9 @@
   max-width: 560px;
   margin: 4px auto 14px;
 }
+/* Card-size preference (Settings → Card size). */
+html[data-card-size="small"] .card-grid { max-width: 430px; gap: 10px; }
+html[data-card-size="large"] .card-grid { max-width: 700px; gap: 14px; }
 .game-card {
   position: relative;
   display: grid;
@@ -175,6 +178,67 @@
 }
 .rank-next { margin: 6px 0 0; color: var(--muted); font-size: calc(var(--fs-body) - 1px); }
 
+/* Compact rank strip: a single inline row for the in-game HUD, so mastery
+   progress is visible during play without competing with the board. */
+.rank-bar-compact { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
+.rank-bar-compact .rank-track { flex: 1 1 90px; min-width: 70px; height: 8px; }
+.rank-bar-compact .rank-next-inline { margin: 0; }
+
+/* Mastery row inside the gameplay HUD: distinct from the Match Score cell —
+   slim, full-width, and labelled as XP rather than points. */
+.hud-mastery {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding-top: 8px;
+  box-shadow: inset 0 2px 0 0 rgba(127, 144, 224, 0.35);
+}
+.xp-pending {
+  padding: 3px 6px;
+  color: var(--green);
+  background: var(--field);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-label);
+  white-space: nowrap;
+  box-shadow: 0 0 0 2px var(--frame-shade);
+}
+
+/* Remaining-count cell: the count is hidden ("?") until the player pays for
+   the reveal or pays a wrong-claim penalty. */
+.hud-remaining .hud-value { color: var(--green); }
+
+/* Per-board XP breakdown on the round-complete panel. */
+.xp-breakdown { margin-top: 10px; }
+.xp-breakdown h4 {
+  margin: 0 0 6px;
+  color: var(--gold);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-label);
+  font-weight: 400;
+}
+.xp-breakdown dl { margin: 0; display: grid; gap: 3px; }
+.xp-breakdown-row { display: flex; justify-content: space-between; gap: 12px; font-size: calc(var(--fs-body) - 1px); }
+.xp-breakdown-row dt { color: var(--muted); }
+.xp-breakdown-row dd { margin: 0; color: var(--text); font-family: var(--font-pixel); font-size: var(--fs-label); line-height: 1.7; }
+.xp-breakdown-total { padding-top: 4px; box-shadow: inset 0 2px 0 0 rgba(127, 144, 224, 0.35); }
+.xp-breakdown-total dd { color: var(--green); }
+.xp-saved-note { margin-top: 8px; color: var(--green); font-size: calc(var(--fs-body) - 2px); }
+
+/* Rank-up acknowledgement: one subtle line, no long or blocking animation. */
+.rank-up {
+  margin-top: 8px;
+  padding: 6px 8px;
+  color: var(--ink);
+  text-shadow: none;
+  background: var(--gold);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-label);
+  line-height: 1.5;
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
 .xp-line { margin: 10px 0 0; color: var(--green); font-family: var(--font-pixel); font-size: var(--fs-ui); }
 .session-breakdown { margin: 0 0 16px; }
 .home-rank { margin-top: 14px; padding-top: 12px; box-shadow: inset 0 2px 0 0 var(--frame-shade); }
@@ -225,6 +289,7 @@
   .card-grid { gap: 8px; }
   .game-card { padding: 4px; }
   .game-controls .button { flex: 1 1 40%; }
+  .game-controls .button-reveal { flex-basis: 100%; }
   .round-complete { flex-direction: column; align-items: stretch; }
   .hud-score .hud-value { font-size: 14px; }
 }

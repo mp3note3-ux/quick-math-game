@@ -6,6 +6,7 @@ import {
   outcomeForDuplicateSet,
   outcomeForNoSetsCorrect,
   outcomeForNoSetsWrong,
+  outcomeForRevealRemaining,
   outcomeForWrongSet,
   rewardForLevel,
   type ScoringConfig,
@@ -53,6 +54,15 @@ describe("outcomes", () => {
 
   it("never scores duplicates", () => {
     expect(outcomeForDuplicateSet().delta).toBe(0);
+  });
+
+  it("builds the reveal outcome from the configured cost", () => {
+    expect(outcomeForRevealRemaining(DEFAULT_SCORING_CONFIG)).toEqual({
+      kind: "reveal-remaining",
+      delta: -1,
+    });
+    const config: ScoringConfig = { ...DEFAULT_SCORING_CONFIG, revealRemainingCost: -2 };
+    expect(outcomeForRevealRemaining(config).delta).toBe(-2);
   });
 });
 

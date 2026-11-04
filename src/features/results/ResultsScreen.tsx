@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Header } from "../../app/Header";
+import { Header, type NavTarget } from "../../app/Header";
 import { useI18n } from "../../app/I18nContext";
 import { RankBar } from "../../app/RankBar";
 import type { PersonalStats } from "../../domain/progression";
@@ -14,9 +14,10 @@ interface ResultsScreenProps {
   sessionXpEarned: number;
   onPlayAgain: () => void;
   onHome: () => void;
+  onNavigate: (target: NavTarget) => void;
 }
 
-export function ResultsScreen({ playerName, state, stats, sessionXpEarned, onPlayAgain, onHome }: ResultsScreenProps) {
+export function ResultsScreen({ playerName, state, stats, sessionXpEarned, onPlayAgain, onHome, onNavigate }: ResultsScreenProps) {
   const { t } = useI18n();
   const headingRef = useRef<HTMLHeadingElement>(null);
 
@@ -28,7 +29,7 @@ export function ResultsScreen({ playerName, state, stats, sessionXpEarned, onPla
 
   return (
     <div className="screen">
-      <Header onHome={onHome} />
+      <Header onHome={onHome} currentNav="play" onNavigate={onNavigate} />
       <main className="results window">
         <p className="window-title">{t("resultsTitle")}</p>
         <h1 ref={headingRef} tabIndex={-1}>

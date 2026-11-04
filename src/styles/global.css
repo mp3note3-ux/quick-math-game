@@ -18,7 +18,7 @@ body {
   background-size: 8px 8px;
 }
 
-/* Faint CRT scanlines. Delete this block for a perfectly flat look. */
+/* Faint CRT scanlines (can be disabled in Settings). */
 body::after {
   content: "";
   position: fixed;
@@ -27,6 +27,7 @@ body::after {
   pointer-events: none;
   background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.07) 0 1px, transparent 1px 3px);
 }
+html.no-scanlines body::after { display: none; }
 
 button, input { font: inherit; color: inherit; text-shadow: inherit; }
 button { cursor: pointer; }
@@ -45,14 +46,30 @@ h1, h2, h3, p { margin: 0; }
 
 .topbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px 12px;
   min-height: 40px;
   margin-bottom: 18px;
 }
 .topbar-end { justify-content: flex-end; }
 .topbar-actions { display: flex; align-items: center; gap: 10px; }
+
+/* ---------- Top-level navigation (Play / Rules / Settings) ---------- */
+
+.main-nav { display: inline-flex; gap: 6px; }
+.nav-item {
+  border: 0;
+  padding: 7px 10px;
+  color: var(--muted);
+  background: var(--field);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-label);
+  box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 2px var(--frame-shade);
+}
+.nav-item:not(.is-active):hover { color: var(--text); }
+.nav-item.is-active { color: var(--ink); text-shadow: none; background: var(--gold); box-shadow: 0 0 0 2px var(--ink), inset -2px -2px 0 var(--gold-dark); }
 
 .brand {
   display: inline-flex;
@@ -243,6 +260,85 @@ html[lang="ko"] .hud-score .hud-value { font-size: 20px; }
 @keyframes blink { 50% { opacity: 0; } }
 @keyframes cursor-nudge { 50% { transform: translateX(2px); } }
 @keyframes blink-ring { 50% { box-shadow: inset -3px -3px 0 var(--gold-dark), inset 3px 3px 0 rgba(255, 255, 255, 0.55), 0 0 0 2px var(--ink), 0 0 0 4px var(--frame); } }
+/* The OS reduced-motion preference applies unless the player explicitly
+   chose full motion in Settings; "Reduced motion: On" forces it everywhere. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
+  html:not(.force-full-motion) *, html:not(.force-full-motion) *::before, html:not(.force-full-motion) *::after { animation: none !important; transition: none !important; }
 }
+html.force-reduced-motion *, html.force-reduced-motion *::before, html.force-reduced-motion *::after { animation: none !important; transition: none !important; }
+
+/* ---------- Player preferences (applied from Settings) ---------- */
+
+/* High-contrast theme: flat solid colors, no gradients/dither/scanlines,
+   maximum separation between ink, fields, frames, and accents. */
+html[data-theme="high-contrast"] {
+  --ink: #000000;
+  --bg: #000000;
+  --bg-checker: #000000;
+  --win-top: #000000;
+  --win-bot: #000000;
+  --field: #000000;
+  --frame: #ffffff;
+  --frame-shade: #9a9a9a;
+  --text: #ffffff;
+  --muted: #d8d8d8;
+  --gold: #ffd700;
+  --gold-dark: #a88800;
+  --green: #4dff88;
+  --red: #ff6b6b;
+  --btn-blue: #0047c8;
+  --btn-blue-shade: #00245f;
+  --btn-red: #c40000;
+  --btn-red-shade: #5f0000;
+}
+html[data-theme="high-contrast"] body { background-image: none; text-shadow: none; }
+html[data-theme="high-contrast"] button, html[data-theme="high-contrast"] input { text-shadow: none; }
+html[data-theme="high-contrast"] .game-card::after { background: none; }
+
+/* Strong focus / selection emphasis. */
+html.strong-focus :focus-visible { outline: 4px solid var(--gold); outline-offset: 3px; }
+html.strong-focus .game-card.is-selected,
+html.strong-focus .game-card.is-selected:hover {
+  box-shadow: 0 0 0 2px var(--ink), 0 0 0 8px var(--gold), 0 0 0 10px var(--ink), inset -3px -3px 0 rgba(0, 0, 0, 0.25), inset 3px 3px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* ---------- Rules / Settings shared page layout ---------- */
+
+.page-heading {
+  margin: 4px 0 14px;
+  color: var(--gold);
+  font-family: var(--font-pixel);
+  font-size: clamp(14px, 4vw, 20px);
+  font-weight: 400;
+  line-height: 1.4;
+}
+.page-heading:focus { outline: none; }
+.rules-page, .settings-page { display: grid; gap: 16px; padding-bottom: 12px; }
+.rule-section p { color: var(--text); }
+.rule-section p + p { margin-top: 8px; }
+.rule-list { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; color: var(--text); }
+.rule-ranks { color: var(--gold); }
+
+/* Static card examples in the rules. */
+.rule-example { margin: 12px 0 0; }
+.rule-example-cards { display: inline-flex; gap: 8px; padding: 4px; }
+.example-card {
+  width: 64px;
+  aspect-ratio: 1.3 / 1;
+  cursor: default;
+}
+.rule-example figcaption { margin-top: 8px; color: var(--muted); font-size: calc(var(--fs-body) - 1px); }
+
+/* ---------- Settings controls ---------- */
+
+.settings-note { color: var(--muted); font-size: calc(var(--fs-body) - 1px); }
+.setting-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; padding: 8px 0; }
+.setting-row + .setting-row { box-shadow: inset 0 2px 0 0 rgba(127, 144, 224, 0.35); }
+.setting-label { color: var(--text); }
+.setting-options { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.setting-hint { color: var(--muted); font-size: calc(var(--fs-body) - 1px); }
+.storage-status { margin-top: 10px; padding: 8px 10px; background: var(--field); box-shadow: 0 0 0 2px var(--frame-shade); font-size: calc(var(--fs-body) - 1px); }
+.storage-status.is-ok { color: var(--green); }
+.storage-status.is-bad { color: var(--red); }
+.reset-confirm { margin-top: 12px; padding: 10px; background: var(--field); box-shadow: 0 0 0 2px var(--btn-red-shade), 0 0 0 4px var(--ink); }
+.reset-confirm p { color: var(--red); font-size: calc(var(--fs-body) - 1px); }

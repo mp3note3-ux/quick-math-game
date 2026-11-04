@@ -37,23 +37,25 @@ The idle-player ranking concern is primarily a multiplayer problem. Do not punis
 ├── vite.config.ts
 ├── src/
 │   ├── main.tsx
-│   ├── app/                  # App shell, header, locale provider, helpers
+│   ├── app/                  # App shell, header + top nav, rank bar, locale provider, helpers
 │   ├── domain/               # Pure game rules and tests
 │   │   ├── cards.ts
 │   │   ├── combinations.ts
 │   │   ├── session.ts
 │   │   ├── scoring.ts
 │   │   ├── progression.ts
+│   │   ├── preferences.ts
 │   │   ├── rng.ts
 │   │   └── simulation/
 │   ├── features/
 │   │   ├── home/
-│   │   ├── game/
+│   │   ├── game/             # GameScreen + shared card visual theme
 │   │   ├── results/
-│   │   └── settings/          # Currently language switcher only
+│   │   ├── rules/            # Dedicated Rules screen
+│   │   └── settings/         # Settings screen + language switcher
 │   ├── i18n/                  # Typed EN/KO catalogs and parity tests
 │   ├── infrastructure/storage/
-│   │   ├── schema.ts
+│   │   ├── schema.ts          # Profile schema v2 (v1 migrates automatically)
 │   │   ├── repository.ts
 │   │   └── storage.test.ts
 │   └── styles/                # tokens.css, global.css, components.css
@@ -88,24 +90,30 @@ This is a structural hypothesis, not a proven human difficulty scale.
 The actual player-facing game is still essentially one three-round Classic flow. There are no complete alternative solo modes yet.
 
 ### Current live scoring
-Verify `src/domain/scoring.ts`; last inspected defaults were:
-- Correct set: +1 at every difficulty level.
+Verify `src/domain/scoring.ts`; current defaults (`DEFAULT_SCORING_CONFIG`):
+- Correct set: +1/+2/+3 for Level 1/2/3 (difficulty-weighted, design-brief candidate).
 - Wrong set: -1.
 - Incorrect “No sets left!”: -1.
 - Correct “No sets left!”: +3.
+- Remaining-count reveal: -1 (once per board).
+- Score floor: 0.
 
-The module supports per-level rewards, but the actual default remains flat `[1,1,1]`. Difficulty classification exists; difficulty-weighted rewards have NOT been enabled in the live game.
+The module supports per-level rewards; the weighted `[1,2,3]` candidate is live in the actual game. These remain playtesting candidates, not locked balance.
 
 ### Current XP and persistence
-Last inspected values:
-- 10 XP per verified set.
-- 25 XP per cleared board.
+Current values (`src/domain/progression.ts`):
+- Level 1/2/3 set: 10/15/25 XP (difficulty-weighted).
+- Cleared board: +25 XP.
+- Six named ranks: Novice 0, Spotter 100, Pattern Seeker 300, Set Finder 700, Combo Master 1500, Grandmaster 3000.
 - Lifetime totals, level breakdown, boards cleared, sessions completed, best score.
 
-This is a basic XP/stat foundation, not a complete progression experience. It has no mastery rank/level, next-rank progress bar, unlock loop, or meaningful milestone path. The app records XP at session completion, so a player who exits before finishing the full session can lose already verified progress from that session.
+XP is checkpointed **per completed board** (keyed by round number; idempotent — replay/reload cannot double-award), so early exit keeps verified progress. Session bookkeeping (sessions played/completed, best score) is recorded once at session finish and never re-awards XP. XP is visible during play: combined points+XP feedback per set, a compact rank strip with a pending per-board XP chip in the HUD, a per-board XP breakdown at round complete, and a subtle rank-up note. Achievements, milestones, and unlockables remain roadmap items — not implemented.
+
+### Current remaining-set count
+The exact remaining-set count is **hidden by default** (HUD shows “?”). A per-board reveal action costs −1 point (from scoring config, floored at 0), reveals the count for the rest of that board, and cannot be charged twice. A wrong “No sets left!” claim applies its existing −1 penalty and reveals the count without a second charge. New boards reset the hidden state.
 
 ### Current settings
-There is an English/Korean language switcher. There is NOT a full GUI Settings screen. Appearance, theme, card size, UI scale, accessibility, motion, feedback, audio (if supported), solo defaults, and data controls are not yet exposed through a settings interface.
+There is a full GUI **Settings screen** (reachable from the shared top navigation, including mid-game without losing board state): language, classic/high-contrast theme, card size, UI/text scale, scanline toggle, reduced motion (system/on/off), strong focus/selection emphasis, local-storage status, and a two-step mastery-progress reset. Preferences are typed/validated (`src/domain/preferences.ts`), stored in the v2 profile schema (v1 profiles migrate automatically), applied as data attributes/classes on the document root, and are cosmetic only — they never change score, XP, or ranking. No audio controls exist because no audio feature exists.
 
 ### Current simulation caveat
 `docs/scoring-simulation.md` compares flat and weighted candidate models, but should NOT be treated as decisive balance evidence:
@@ -120,24 +128,13 @@ Improve the simulation and run human playtests before choosing final weights.
 
 Refer to `GAME_DESIGN_IMPROVEMENT.md` for full requirements and acceptance criteria.
 
-### Milestone 1: better scoring + meaningful mastery
-- Test Level 1/2/3 reward models and score breakdown.
-- Revisit wrong-answer and board-clear rewards by mode.
-- Make Practice safe for mistakes; use mode-appropriate consequences elsewhere.
-- Design difficulty-aware XP, mastery ranks, XP progress, and meaningful milestones.
-- Save verified progression at board checkpoints exactly once, so early exit does not erase completed work.
-- Display per-level stats, XP awarded, personal bests, and result breakdowns.
+### Milestone 1: better scoring + meaningful mastery — substantially shipped
+Shipped: difficulty-weighted rewards `[1,2,3]` live, difficulty-aware XP `[10,15,25]` + +25 clear, six ranks, per-board idempotent checkpoints, per-level stats and result breakdowns, XP integrated into gameplay feedback/HUD, hidden remaining count with paid reveal.
+Remaining: human playtesting to validate the level→difficulty hypothesis and lock values; mode-sensitive mistake rules; milestones/achievements/personal bests beyond the basics; simulation improvements before any rebalance.
 
-### Milestone 2: GUI Settings
-Add a real Settings screen reachable from home and during solo play:
-- General/language.
-- Appearance themes, card style/size, UI/text scale, board spacing.
-- Accessibility: high contrast, color-vision-friendly palette, reduced motion, disable scanlines/flashing, keyboard help.
-- Feedback and hint preferences.
-- Supported solo gameplay defaults.
-- Audio controls only for audio features that exist.
-- Local data/save status, reset controls, and carefully guarded export/import if implemented.
-Settings should have live preview, local persistence, runtime validation, versioning/migration, English/Korean localization, and accessible controls. Accessibility preferences must never alter scoring.
+### Milestone 2: GUI Settings — first version shipped
+Shipped: Settings screen reachable from home and during solo play with live preview, persistence, v1→v2 migration, EN/KO, accessible controls — language, classic/high-contrast themes, card size, UI/text scale, scanlines, reduced motion, strong focus, storage status, two-step mastery reset. Dedicated Rules screen and Play/Rules/Settings navigation are also shipped.
+Remaining: color-vision-friendly palette option, spacing/layout controls, feedback/hint preferences, solo gameplay defaults, export/import.
 
 ### Milestone 3: solo game modes
 Recommended order:
@@ -189,4 +186,4 @@ Before claiming a task is complete, run relevant tests and build. For player-fac
 
 ## 10. Current status in one sentence
 
-The technical Stage 1 foundation is in place, but the immediate product work is still ahead: **make solo scoring rewarding, turn basic XP into meaningful mastery, add GUI Settings, and ship complete solo modes before returning to multiplayer implementation.**
+Stage 1 plus the XP/Rules/Settings pass are in place — difficulty-weighted scoring, visible checkpointed mastery XP, hidden remaining-set count with a paid reveal, a full Rules screen, and a working Settings screen are shipped — and the next product work is **complete solo modes (Practice, Sprint, and beyond), achievements/milestones, and playtest-driven balance before any multiplayer implementation.**

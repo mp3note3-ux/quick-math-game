@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Header } from "../../app/Header";
+import { Header, type NavTarget } from "../../app/Header";
 import { useI18n } from "../../app/I18nContext";
 import { formatDelta } from "../../app/format";
 import { RankBar } from "../../app/RankBar";
@@ -13,6 +13,7 @@ interface HomeScreenProps {
   stats: PersonalStats;
   onStart: (name: string) => void;
   onHome: () => void;
+  onNavigate: (target: NavTarget) => void;
 }
 
 const HOW_TO_STEPS: ReadonlyArray<{ title: CatalogKey; body: CatalogKey }> = [
@@ -27,7 +28,7 @@ function rewardSummary(config: ScoringConfig): string {
   return one === two && two === three ? `+${one}` : `+${Math.min(one, two, three)}–${Math.max(one, two, three)}`;
 }
 
-export function HomeScreen({ initialName, config, stats, onStart, onHome }: HomeScreenProps) {
+export function HomeScreen({ initialName, config, stats, onStart, onHome, onNavigate }: HomeScreenProps) {
   const { t } = useI18n();
   const [name, setName] = useState(initialName);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -58,7 +59,7 @@ export function HomeScreen({ initialName, config, stats, onStart, onHome }: Home
 
   return (
     <div className="screen">
-      <Header showBrand={false} onHome={onHome} />
+      <Header showBrand={false} onHome={onHome} currentNav="play" onNavigate={onNavigate} />
       <main>
         <section className="title-logo">
           <h1>{t("appName")}</h1>

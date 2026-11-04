@@ -104,6 +104,10 @@ test("correct set scores its level-weighted reward and records the set", async (
   const level = combinationLevel(triple.map((index) => board[index]!));
   expect((await readDebugState(page)).score).toBe(level);
   await expect(await dialog(page)).toContainText(`+${level}`);
+  // Feedback shows BOTH rewards: match points and mastery XP (10/15/25).
+  const xp = [10, 15, 25][level - 1]!;
+  await expect(await dialog(page)).toContainText(`+${xp}`);
+  await expect(await dialog(page)).toContainText("Mastery XP");
   await expect(page.locator(".found-chip")).toHaveCount(1);
 });
 
@@ -246,4 +250,144 @@ test("legacy player name is adopted into the profile", async ({ page }) => {
   );
   await page.goto(`/?seed=${SEED}`);
   await expect(page.getByLabel("Player name")).toHaveValue("Legacy");
+});
+
+test("remaining-set count is hidden by default, revealed once for 1 point, hidden again next board", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await startGame(page);
+  const board = await boardCards(page);
+  const remaining = findCombinations(board).length;
+  test.skip(remaining === 0, "seeded board has no sets — pick another seed");
+
+  // Hidden by default: the HUD shows "?" and no exact count anywhere.
+  const remainingCell = page.locator(".hud-remaining .hud-value");
+  await expect(remainingCell).toHaveText("?");
+  await expect(page.locator(".hud")).not.toContainText(`${remaining} undiscovered`);
+
+  // Find one set so the score can actually pay the 1-point reveal cost.
+  const first = findCombinations(board)[0]!;
+  const level = combinationLevel(first.map((index) => board[index]!));
+  await playTriple(page, first);
+
+  // Pay the reveal cost: score drops by exactly 1 and the count appears.
+  await page.getByRole("button", { name: /Reveal remaining/ }).click();
+  expect((await readDebugState(page)).score).toBe(level - 1);
+  await expect(remainingCell).toHaveText(String(remaining - 1));
+
+  // The reveal is a one-time purchase: the button becomes a disabled readout.
+  await expect(page.getByRole("button", { name: /Reveal remaining/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Remaining:/ })).toBeDisabled();
+  expect((await readDebugState(page)).score).toBe(level - 1);
+
+  // Finish board 1 and advance: the fresh board hides the count again.
+  for (const triple of findCombinations(board).slice(1)) {
+    await playTriple(page, triple);
+  }
+  await page.getByRole("button", { name: "No sets left!" }).click();
+  await expect(page.getByRole("heading", { name: "Round complete!" })).toBeVisible();
+  await page.getByRole("button", { name: "Next round" }).click();
+  await expect(page.locator(".hud-remaining .hud-value")).toHaveText("?");
+});
+
+test("a wrong no-sets claim reveals the count without a second charge", async ({ page }) => {
+  await startGame(page);
+  const board = await boardCards(page);
+  const remaining = findCombinations(board).length;
+  test.skip(remaining === 0, "seeded board has no sets — pick another seed");
+
+  await page.getByRole("button", { name: "No sets left!" }).click();
+  // The penalty was applied (floored at 0) and the count is now visible.
+  await expect(page.locator(".hud-remaining .hud-value")).toHaveText(String(remaining));
+  // The paid reveal is used up: no second reveal fee exists.
+  await expect(page.getByRole("button", { name: /Reveal remaining/ })).toHaveCount(0);
+});
+
+test("navigation: Rules and Settings from home and back, Korean localized", async ({ page }) => {
+  await page.goto(`/?seed=${SEED}`);
+
+  await page.getByRole("button", { name: "Rules" }).click();
+  await expect(page.getByRole("heading", { name: "Rules" })).toBeVisible();
+  await expect(page.getByText("Goal and components")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mastery XP" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Play" }).click();
+  await expect(page.getByRole("button", { name: "Play solo" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Settings" }).click();
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+  await expect(page.getByText("Local storage is working")).toBeVisible();
+
+  // Korean applies to the new screens too (use the header switcher; the
+  // Settings language control shows the same active locale).
+  await page.getByRole("banner").getByRole("button", { name: "한국어" }).click();
+  await expect(page.getByRole("heading", { name: "설정" })).toBeVisible();
+  await page.getByRole("button", { name: "규칙" }).click();
+  await expect(page.getByRole("heading", { name: "게임 규칙" })).toBeVisible();
+});
+
+test("opening Settings mid-game and returning preserves the board and score", async ({ page }) => {
+  await startGame(page);
+  const board = await boardCards(page);
+  const triple = findCombinations(board)[0];
+  if (!triple) {
+    test.skip(true, "seeded board has no set — pick another seed");
+    return;
+  }
+  await playTriple(page, triple);
+  const scoreBefore = (await readDebugState(page)).score;
+
+  await page.getByRole("button", { name: "Settings" }).click();
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+  await page.getByRole("button", { name: "Play" }).click();
+
+  // Same session continues: score kept, found set kept, board kept.
+  expect((await readDebugState(page)).score).toBe(scoreBefore);
+  await expect(page.locator(".found-chip")).toHaveCount(1);
+  await expect(page.locator(".card-grid .game-card")).toHaveCount(9);
+});
+
+test("settings apply immediately and persist across reload", async ({ page }) => {
+  await page.goto(`/?seed=${SEED}`);
+  await page.getByRole("button", { name: "Settings" }).click();
+
+  await page.getByRole("button", { name: "High contrast" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "high-contrast");
+  await page.getByRole("button", { name: "Large", exact: true }).first().click();
+  await expect(page.locator("html")).toHaveAttribute("data-card-size", "large");
+  await page.getByRole("button", { name: "Off", exact: true }).first().click();
+  await expect(page.locator("html")).toHaveClass(/no-scanlines/);
+
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "high-contrast");
+  await expect(page.locator("html")).toHaveAttribute("data-card-size", "large");
+  await expect(page.locator("html")).toHaveClass(/no-scanlines/);
+});
+
+test("resetting mastery requires confirmation and erases progress", async ({ page }) => {
+  test.setTimeout(120_000);
+  await startGame(page);
+
+  // Earn some real XP first.
+  const board = await boardCards(page);
+  const triple = findCombinations(board)[0];
+  if (!triple) {
+    test.skip(true, "seeded board has no set — pick another seed");
+    return;
+  }
+  await playTriple(page, triple);
+
+  await page.getByRole("button", { name: "Settings" }).click();
+  await page.getByRole("button", { name: "Reset mastery progress" }).click();
+  // Two-step flow: the destructive button only appears inside the confirm.
+  await page.getByRole("button", { name: "Yes, erase progress" }).click();
+
+  const stored = await page.evaluate(
+    (key) => window.localStorage.getItem(key),
+    PROFILE_STORAGE_KEY,
+  );
+  const profile = JSON.parse(stored!) as { mastery: { xp: number; totalSetsFound: number } };
+  expect(profile.mastery.xp).toBe(0);
+  expect(profile.mastery.totalSetsFound).toBe(0);
 });

@@ -230,6 +230,94 @@ describe("no-sets declaration", () => {
   });
 });
 
+describe("remaining-count reveal", () => {
+  it("starts each board with the count hidden", () => {
+    const reducer = makeReducer();
+    const state = startSession(reducer, boardWithSet().board);
+    expect(state.countRevealed).toBe(false);
+  });
+
+  it("charges the configured cost once and reveals the count", () => {
+    const reducer = makeReducer();
+    const { board, triple } = boardWithSet();
+    let state = startSession(reducer, board);
+    // Build a positive score so the cost is actually deducted below.
+    state = playTriple(reducer, state, triple);
+    const before = state.score;
+    state = reducer(state, { type: "reveal-remaining" });
+    expect(state.countRevealed).toBe(true);
+    expect(state.score).toBe(before - 1);
+    expect(state.feedback).toMatchObject({
+      kind: "reveal-remaining",
+      delta: -1,
+      remaining: remainingCombinations(state).length,
+    });
+  });
+
+  it("never charges twice: repeat reveals are free no-ops", () => {
+    const reducer = makeReducer();
+    const { board, triple } = boardWithSet();
+    let state = startSession(reducer, board);
+    state = playTriple(reducer, state, triple);
+    state = reducer(state, { type: "reveal-remaining" });
+    const scoreAfterFirst = state.score;
+    const feedbackAfterFirst = state.feedback;
+    state = reducer(state, { type: "reveal-remaining" });
+    state = reducer(state, { type: "reveal-remaining" });
+    expect(state.score).toBe(scoreAfterFirst);
+    expect(state.feedback).toBe(feedbackAfterFirst);
+    expect(state.countRevealed).toBe(true);
+  });
+
+  it("respects the score floor at zero", () => {
+    const reducer = makeReducer();
+    const { board } = boardWithSet();
+    const state = reducer(startSession(reducer, board), { type: "reveal-remaining" });
+    expect(state.score).toBe(0);
+    expect(state.countRevealed).toBe(true);
+  });
+
+  it("is disabled while a card selection is in progress", () => {
+    const reducer = makeReducer();
+    const { board, triple } = boardWithSet();
+    let state = startSession(reducer, board);
+    state = reducer(state, { type: "start-selection" });
+    state = reducer(state, { type: "toggle-card", index: triple[0]! });
+    const scoreDuringSelection = state.score;
+    state = reducer(state, { type: "reveal-remaining" });
+    expect(state.countRevealed).toBe(false);
+    expect(state.score).toBe(scoreDuringSelection);
+    expect(state.selection).toEqual([triple[0]!]);
+  });
+
+  it("a wrong no-sets claim reveals the count without a second charge", () => {
+    const reducer = makeReducer();
+    const { board, triple } = boardWithSet();
+    let state = startSession(reducer, board);
+    state = playTriple(reducer, state, triple);
+    state = reducer(state, { type: "declare-no-sets" });
+    // Wrong claim already applied its own penalty and revealed the count.
+    expect(state.countRevealed).toBe(true);
+    expect(state.feedback?.kind).toBe("no-sets-wrong");
+    const scoreAfterClaim = state.score;
+    // The paid reveal is now a no-op: the information was already bought.
+    state = reducer(state, { type: "reveal-remaining" });
+    expect(state.score).toBe(scoreAfterClaim);
+  });
+
+  it("resets the revealed state on the next board", () => {
+    const reducer = makeReducer();
+    const { board } = boardWithSet();
+    let state = startSession(reducer, board);
+    state = reducer(state, { type: "reveal-remaining" });
+    expect(state.countRevealed).toBe(true);
+    state = clearBoard(reducer, state);
+    state = reducer(state, { type: "next-round" });
+    expect(state.round).toBe(2);
+    expect(state.countRevealed).toBe(false);
+  });
+});
+
 describe("round transitions", () => {
   it("advances to the next round with a fresh board", () => {
     const reducer = makeReducer();

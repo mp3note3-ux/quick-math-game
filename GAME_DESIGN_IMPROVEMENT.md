@@ -69,41 +69,41 @@ The current repository has a good technical base:
 
 ### Current player-facing experience
 
-The current game is still essentially one three-round classic solo flow. The home, board, and result screens exist, but there are no substantial alternative solo modes yet.
+The solo game is one three-round classic flow (no alternative solo modes yet), now with the XP / Rules / Settings pass shipped: mastery XP is visible during play (combined points+XP feedback, a compact in-HUD rank strip, a pending per-board XP chip, per-board XP breakdowns, and rank-up acknowledgement), the remaining-set count is hidden by default with a paid once-per-board reveal, and there are dedicated Rules and Settings screens with consistent Play/Rules/Settings navigation.
 
-### Current scoring — important: still the prototype values
+### Current scoring — difficulty-weighted candidate is live
 
 The live default in \`src/domain/scoring.ts\` is:
 
 | Event | Current score change |
 |---|---:|
 | Correct Level 1 set | +1 |
-| Correct Level 2 set | +1 |
-| Correct Level 3 set | +1 |
+| Correct Level 2 set | +2 |
+| Correct Level 3 set | +3 |
 | Incorrect set | -1 |
 | Incorrect “No sets left!” declaration | -1 |
 | Correct “No sets left!” declaration | +3 |
+| Remaining-count reveal (once per board) | -1 |
 
-The code can accept a reward per difficulty level, but the defaults remain \`[1, 1, 1]\`. Difficulty is calculated and shown in feedback, but it does not yet affect match score. Therefore, difficulty-sensitive scoring is **not implemented in the actual experience**.
+Score floor: 0. These are the design-brief candidate values and remain **pending human playtesting** — the structural level classification is a hypothesis, and \`docs/scoring-simulation.md\` has documented limitations. Do not treat the weights as locked.
 
-### Current XP — foundation only, not a complete progression system
+### Current XP — visible loop shipped; achievements/milestones remain
 
 The current code awards:
-- 10 XP per verified set.
+- Level 1/2/3 set: 10/15/25 XP (difficulty-weighted).
 - 25 XP per cleared board.
+- Six ranks: Novice 0, Spotter 100, Pattern Seeker 300, Set Finder 700, Combo Master 1500, Grandmaster 3000.
 - Lifetime totals for sets found, sets by level, boards cleared, sessions completed, and best score.
 
-XP is separate from match score and stored locally. However:
-- XP is flat; finding a Level 3 set is worth the same XP as Level 1.
-- There is no player level/rank, XP progress bar, next milestone, unlock path, or quest loop.
-- The app records progression when the entire session reaches its finished state. Verified work from a session abandoned before completion can be lost.
-- Results show a small mastery summary, but mastery is not yet a meaningful part of the play loop.
+XP is separate from match score, stored locally, and **checkpointed per completed board idempotently** — exiting after a cleared board keeps its progress, and reload/replay cannot double-award it. XP is part of the play loop: correct-set feedback shows points and XP together, the gameplay HUD shows rank, next-rank progress, and pending per-board XP, and cleared boards show a full XP breakdown.
 
-Do not describe this as a fully implemented progression system. It is a working persistence and statistics foundation.
+Still NOT implemented: achievements/milestone cards, unlockables (card backs, themes, titles), personal activity/history, and personal bests beyond the single best-score field. Do not describe those as complete.
 
-### Current Settings — language control only
+### Current Settings — first GUI version shipped
 
-The app has an English/Korean language switcher. It does **not** yet have a proper graphical Settings screen for themes, UI scale, card appearance, motion, accessibility preferences, sound, or solo gameplay preferences.
+A graphical Settings screen is reachable from the shared top navigation (including mid-game, without losing board state) with: language, classic/high-contrast themes, card size, UI/text scale, scanline toggle, reduced motion (system/on/off), strong focus/selection emphasis, local-storage status, and a two-step mastery reset. Preferences are typed, validated, migrated (profile schema v2), localized, and cosmetic-only.
+
+Still NOT implemented: color-vision-friendly palette, spacing/layout controls, feedback/hint preferences, solo gameplay defaults, audio (no audio feature exists), export/import.
 
 ### Current solo content
 
@@ -116,7 +116,7 @@ Not currently implemented:
 - Constellation Chain.
 - Solo personal quests and achievement milestones.
 - Player-facing difficulty selection or challenge progression.
-- Full Settings GUI and saved appearance preferences.
+- Achievement/milestone cards and cosmetic/content unlocks.
 
 ### Existing testing status
 
@@ -403,21 +403,25 @@ React/TypeScript/Vite migration, pure domain modules, tests, local storage found
 
 ### Milestone 1 — solo scoring and progression (first player-facing release)
 
+Status: **substantially shipped** (2026-11-05). Difficulty-weighted rewards `[1,2,3]` are live with a zero floor; XP is difficulty-aware `[10,15,25]` plus +25 per cleared board; six ranks with in-HUD progress; per-board idempotent checkpoints; results and in-run feedback show points + XP and a per-board XP breakdown; the remaining-set count is hidden with a paid reveal. Remaining: items 1 (better simulation + human playtest before locking values), milestone/achievement cards, and richer personal bests.
+
 1. Improve difficulty-aware scoring experiments using a better simulation and human playtest.
-2. Decide Classic base rewards, board-clear bonus, mistake consequence, and score floor.
-3. Show per-level scoring and a clear score breakdown.
-4. Redesign XP to reward difficulty and verified outcomes.
-5. Persist verified progress at board checkpoints, safely and idempotently.
-6. Add mastery ranks, XP progress bar, milestones, and useful personal bests.
-7. Update results and in-run feedback.
+2. Decide Classic base rewards, board-clear bonus, mistake consequence, and score floor. *(candidate values live; decision pending playtest)*
+3. Show per-level scoring and a clear score breakdown. *(shipped)*
+4. Redesign XP to reward difficulty and verified outcomes. *(shipped)*
+5. Persist verified progress at board checkpoints, safely and idempotently. *(shipped)*
+6. Add mastery ranks, XP progress bar, milestones, and useful personal bests. *(ranks + progress shipped; milestones pending)*
+7. Update results and in-run feedback. *(shipped)*
 
 ### Milestone 2 — Settings GUI and solo polish
 
-1. Add a first-class Settings screen.
-2. Add live-preview appearance themes, UI/card scale, spacing, text scale, and accessibility controls.
-3. Add feedback, audio, and supported solo gameplay preferences.
-4. Persist settings with validation/versioning and reset/export safeguards.
-5. Add tests for live preview, persistence, migrations, localization, keyboard use, and mobile layout.
+Status: **first version shipped** (2026-11-05). First-class Settings screen with live preview, persistence, v1→v2 migration, EN/KO, and accessible controls: language, classic/high-contrast themes, card size, UI/text scale, scanlines, reduced motion, strong focus, storage status, two-step mastery reset. Dedicated Rules screen and Play/Rules/Settings navigation shipped alongside. Remaining: color-vision-friendly palette, spacing controls, feedback/hint/solo-default preferences, export/import, audio if audio is ever added.
+
+1. Add a first-class Settings screen. *(shipped)*
+2. Add live-preview appearance themes, UI/card scale, spacing, text scale, and accessibility controls. *(first set shipped; spacing pending)*
+3. Add feedback, audio, and supported solo gameplay preferences. *(pending — no audio feature exists)*
+4. Persist settings with validation/versioning and reset/export safeguards. *(validation/versioning/reset shipped; export pending)*
+5. Add tests for live preview, persistence, migrations, localization, keyboard use, and mobile layout. *(shipped)*
 
 Milestones 1 and 2 can be developed in parallel after the current codebase is reviewed.
 
