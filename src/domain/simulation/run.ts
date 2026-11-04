@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 
 import { createBoard, type Card } from "../cards";
 import { mulberry32 } from "../rng";
-import { DEFAULT_SCORING_CONFIG, type ScoringConfig } from "../scoring";
+import { PROTOTYPE_SCORING_CONFIG, type ScoringConfig } from "../scoring";
 import { ALL_BOTS, DEFAULT_BOT_PARAMS, type BotParams, type RoundTrace } from "./strategies";
 
 const BOARD_COUNT = 10_000;
@@ -27,10 +27,13 @@ interface Scenario {
 }
 
 function scenarios(): Scenario[] {
-  const base = DEFAULT_SCORING_CONFIG;
+  // Compare reward models against the original flat prototype baseline so the
+  // report isolates the effect of each reward model and the floor. The live
+  // shipped default ([1,2,3], floor 0) appears as "levels [1,2,3] · floor 0".
+  const base = PROTOTYPE_SCORING_CONFIG;
   const rewardModels = [
-    ["flat [1,1,1] (current)", [1, 1, 1]],
-    ["levels [1,2,3]", [1, 2, 3]],
+    ["flat [1,1,1] (prototype)", [1, 1, 1]],
+    ["levels [1,2,3] (shipped)", [1, 2, 3]],
     ["levels [1,2,4]", [1, 2, 4]],
   ] as const;
   const list: Scenario[] = [];

@@ -69,6 +69,13 @@ export interface SessionState {
   totalSetsFound: number;
   /** Sets found, grouped by difficulty level: [lv1, lv2, lv3]. */
   setsFoundByLevel: [number, number, number];
+  /**
+   * Per-round sets found by level, indexed by round (1-based → index 0 =
+   * round 1). Enables per-board XP checkpoints: the XP for a completed round
+   * is derived from that round's sets, so verified progress is saved even if
+   * the player exits before the session finishes.
+   */
+  roundSetCounts: Array<[number, number, number]>;
   config: ScoringConfig;
 }
 
@@ -98,6 +105,7 @@ export function createInitialState(
     roundsCompleted: 0,
     totalSetsFound: 0,
     setsFoundByLevel: [0, 0, 0],
+    roundSetCounts: [],
     config,
   };
 }
@@ -157,12 +165,21 @@ function submitSelection(state: SessionState, selection: number[]): SessionState
     const outcome = outcomeForCorrectSet(state.config, level);
     const setsFoundByLevel = [...state.setsFoundByLevel] as [number, number, number];
     setsFoundByLevel[level - 1]! += 1;
+    // Accumulate into the current round's bucket (index round-1) for per-board
+    // checkpointing.
+    const roundSetCounts = state.roundSetCounts.map((entry) => [...entry] as [number, number, number]);
+    const roundIndex = state.round - 1;
+    while (roundSetCounts.length <= roundIndex) {
+      roundSetCounts.push([0, 0, 0]);
+    }
+    roundSetCounts[roundIndex]![level - 1]! += 1;
     return {
       ...base,
       score: applyOutcome(state.score, outcome, state.config),
       foundKeys: [...state.foundKeys, key],
       totalSetsFound: state.totalSetsFound + 1,
       setsFoundByLevel,
+      roundSetCounts,
       feedback: { kind: outcome.kind, delta: outcome.delta, level },
     };
   }

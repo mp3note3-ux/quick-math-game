@@ -125,13 +125,23 @@ describe("session lifecycle", () => {
 });
 
 describe("scoring", () => {
-  it("awards +1 for a correct new set with the default config", () => {
+  it("awards the level-weighted reward for a correct new set by default", () => {
     const reducer = makeReducer();
     const { board, triple } = boardWithSet();
     const state = playTriple(reducer, startSession(reducer, board), triple);
-    expect(state.score).toBe(1);
+    expect(state.score).toBeGreaterThanOrEqual(1);
     expect(state.totalSetsFound).toBe(1);
     expect(state.foundKeys.length).toBe(1);
+  });
+
+  it("rewards harder sets more under the default config", () => {
+    const reducer = makeReducer();
+    const levelOne = boardWithLevel(1);
+    const levelThree = boardWithLevel(3);
+    const s1 = playTriple(reducer, startSession(reducer, levelOne.board), levelOne.triple);
+    const s3 = playTriple(reducer, startSession(reducer, levelThree.board), levelThree.triple);
+    expect(s1.score).toBe(1);
+    expect(s3.score).toBe(3);
   });
 
   it("tracks the difficulty level of each found set", () => {
@@ -154,20 +164,36 @@ describe("scoring", () => {
   it("does not score a duplicate set twice, even across attempts", () => {
     const reducer = makeReducer();
     const { board, triple } = boardWithSet();
+    // The first discovery scores the set's level-weighted reward; repeats add nothing.
+    const level = combinationLevel(triple.map((index) => board[index]!));
     let state = startSession(reducer, board);
     state = playTriple(reducer, state, triple);
     state = playTriple(reducer, state, triple);
     state = playTriple(reducer, state, triple);
-    expect(state.score).toBe(1);
+    expect(state.score).toBe(level);
     expect(state.feedback?.kind).toBe("duplicate-set");
     expect(state.totalSetsFound).toBe(1);
   });
 
-  it("subtracts 1 for an invalid triple", () => {
+  it("penalizes an invalid triple but never below the zero floor", () => {
     const reducer = makeReducer();
     const { board } = boardWithSet();
     const state = playTriple(reducer, startSession(reducer, board), invalidTriple(board));
-    expect(state.score).toBe(-1);
+    expect(state.score).toBe(0);
+    expect(state.feedback?.kind).toBe("wrong-set");
+  });
+
+  it("subtracts the penalty from a positive score", () => {
+    const reducer = makeReducer();
+    const { board, triple } = boardWithSet();
+    let state = startSession(reducer, board);
+    state = playTriple(reducer, state, triple);
+    const before = state.score;
+    state = reducer(state, { type: "start-selection" });
+    for (const index of invalidTriple(board)) {
+      state = reducer(state, { type: "toggle-card", index });
+    }
+    expect(state.score).toBe(Math.max(0, before - 1));
     expect(state.feedback?.kind).toBe("wrong-set");
   });
 
@@ -183,12 +209,12 @@ describe("scoring", () => {
 });
 
 describe("no-sets declaration", () => {
-  it("penalizes a wrong declaration and reports the remaining count", () => {
+  it("penalizes a wrong declaration (floored at zero) and reports the remaining count", () => {
     const reducer = makeReducer();
     const { board } = boardWithSet();
     const total = findCombinations(board).length;
     const state = reducer(startSession(reducer, board), { type: "declare-no-sets" });
-    expect(state.score).toBe(-1);
+    expect(state.score).toBe(0);
     expect(state.feedback).toMatchObject({ kind: "no-sets-wrong", remaining: total });
     expect(state.phase).toBe("playing");
   });

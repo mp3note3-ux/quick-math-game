@@ -2,10 +2,16 @@
  * Scoring model. Pure: no React, DOM, storage, or network.
  *
  * All point values live in `ScoringConfig` — never hard-coded in game logic
- * or UI strings. Defaults reproduce the original prototype (+1 flat per set,
- * -1 wrong, +3 for a correct "no sets left" declaration). Final values stay
- * configurable until the owner reviews the simulation report; see
- * `src/domain/simulation/run.ts`.
+ * or UI strings. The default now uses the difficulty-weighted candidate
+ * rewards documented in `GAME_DESIGN_IMPROVEMENT.md` (Level 1/2/3 = 1/2/3
+ * points) with a zero score floor in Classic, so one mistake cannot make a
+ * session feel hopeless. These values remain the *tested candidate*, not a
+ * final balance lock: the structural level classification is a hypothesis,
+ * and human playtesting is still required before treating the weights as
+ * proven. Evidence: `npm run simulate` → `docs/scoring-simulation.md`.
+ *
+ * The prior flat prototype values (+1 any set, −1 wrong, +3 no-sets, no
+ * floor) are preserved below as `PROTOTYPE_SCORING_CONFIG` for comparison.
  */
 import type { CombinationLevel } from "./combinations";
 
@@ -28,13 +34,33 @@ export interface ScoringConfig {
   eligibilityMinVerifiedSets: number;
 }
 
-/** Current prototype behavior, used as the default until sims are reviewed. */
-export const DEFAULT_SCORING_CONFIG: ScoringConfig = {
+/**
+ * The original flat prototype behavior (+1 any set, no floor). Kept for
+ * simulation comparison and regression reference — no longer the live
+ * default.
+ */
+export const PROTOTYPE_SCORING_CONFIG: ScoringConfig = {
   levelRewards: [1, 1, 1],
   wrongSetPenalty: -1,
   wrongNoSetsPenalty: -1,
   noSetsBonus: 3,
   scoreFloor: null,
+  eligibilityMinVerifiedSets: 1,
+};
+
+/**
+ * Live Classic defaults: difficulty-weighted rewards (Lv1/2/3 = 1/2/3) with
+ * a zero floor so mistakes never drag a session negative. A correct
+ * "no sets left" still awards the clear bonus. Penalties stay modest (−1).
+ *
+ * Design-brief candidate, pending human playtest — see file header.
+ */
+export const DEFAULT_SCORING_CONFIG: ScoringConfig = {
+  levelRewards: [1, 2, 3],
+  wrongSetPenalty: -1,
+  wrongNoSetsPenalty: -1,
+  noSetsBonus: 3,
+  scoreFloor: 0,
   eligibilityMinVerifiedSets: 1,
 };
 

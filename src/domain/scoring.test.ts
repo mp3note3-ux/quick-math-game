@@ -21,11 +21,21 @@ describe("rewardForLevel", () => {
 });
 
 describe("outcomes", () => {
-  it("builds a correct-set outcome with level and reward", () => {
-    expect(outcomeForCorrectSet(DEFAULT_SCORING_CONFIG, 2)).toEqual({
+  it("builds a correct-set outcome with level and weighted reward", () => {
+    expect(outcomeForCorrectSet(DEFAULT_SCORING_CONFIG, 1)).toEqual({
       kind: "correct-set",
       delta: 1,
+      level: 1,
+    });
+    expect(outcomeForCorrectSet(DEFAULT_SCORING_CONFIG, 2)).toEqual({
+      kind: "correct-set",
+      delta: 2,
       level: 2,
+    });
+    expect(outcomeForCorrectSet(DEFAULT_SCORING_CONFIG, 3)).toEqual({
+      kind: "correct-set",
+      delta: 3,
+      level: 3,
     });
   });
 
@@ -47,13 +57,17 @@ describe("outcomes", () => {
 });
 
 describe("applyOutcome", () => {
-  it("applies the delta without a floor by default", () => {
-    expect(applyOutcome(0, outcomeForWrongSet(DEFAULT_SCORING_CONFIG), DEFAULT_SCORING_CONFIG)).toBe(-1);
+  it("applies the delta when above the floor", () => {
+    expect(applyOutcome(5, outcomeForWrongSet(DEFAULT_SCORING_CONFIG), DEFAULT_SCORING_CONFIG)).toBe(4);
   });
 
-  it("clamps at the configured floor", () => {
-    const config: ScoringConfig = { ...DEFAULT_SCORING_CONFIG, scoreFloor: 0 };
-    expect(applyOutcome(0, outcomeForWrongSet(config), config)).toBe(0);
-    expect(applyOutcome(2, outcomeForWrongSet(config), config)).toBe(1);
+  it("clamps at the default zero floor so mistakes never go negative", () => {
+    expect(applyOutcome(0, outcomeForWrongSet(DEFAULT_SCORING_CONFIG), DEFAULT_SCORING_CONFIG)).toBe(0);
+    expect(applyOutcome(1, outcomeForWrongSet(DEFAULT_SCORING_CONFIG), DEFAULT_SCORING_CONFIG)).toBe(0);
+  });
+
+  it("respects an explicit floorless config", () => {
+    const config: ScoringConfig = { ...DEFAULT_SCORING_CONFIG, scoreFloor: null };
+    expect(applyOutcome(0, outcomeForWrongSet(config), config)).toBe(-1);
   });
 });

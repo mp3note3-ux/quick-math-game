@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { statsAfterSession, type SessionSummary } from "../domain/progression";
+import {
+  statsAfterBoard,
+  statsAfterSession,
+  xpForSets,
+  XP_PER_BOARD_CLEARED,
+  type SessionSummary,
+} from "../domain/progression";
 import { mulberry32, type RandomSource } from "../domain/rng";
 import { DEFAULT_SCORING_CONFIG } from "../domain/scoring";
 import {
@@ -50,10 +56,14 @@ function AppContent() {
   const profileRef = useRef(profile);
   profileRef.current = profile;
 
+  const [saveFailed, setSaveFailed] = useState(false);
+
   function saveProfile(next: StoredProfile) {
     profileRef.current = next;
     setProfile(next);
-    profileRepo.save(next);
+    // Surface persistence failures instead of claiming a save that did not
+    // happen (blocked storage, quota, etc.).
+    if (!profileRepo.save(next)) setSaveFailed(true);
   }
 
   // --- Session state (pure domain reducer) ---
@@ -94,15 +104,42 @@ function AppContent() {
     };
   }, [seed]);
 
-  // --- Record mastery exactly once per finished session ---
-  const recordedRef = useRef(false);
+  // --- Record mastery at verified checkpoints ---
+  // XP is awarded per completed board (idempotently), so progress survives an
+  // early exit. Session bookkeeping (sessions played/completed, best score) is
+  // recorded once at session finish. Neither path re-awards the other's data.
+  const checkpointedRoundRef = useRef(0);
+  const sessionRecordedRef = useRef(false);
+
+  // Award XP for each board the moment it is completed. The completed round's
+  // state is terminal (the reducer cannot add sets to it), so keying by round
+  // number makes this idempotent: re-renders/replays recompute the same round
+  // and are skipped.
+  useEffect(() => {
+    if (session.phase !== "round-complete") return;
+    const round = session.roundsCompleted;
+    if (round <= checkpointedRoundRef.current) return;
+    const sets = session.roundSetCounts[round - 1];
+    if (sets === undefined) return;
+    checkpointedRoundRef.current = round;
+    const current = profileRef.current;
+    saveProfile({
+      ...current,
+      mastery: statsAfterBoard(current.mastery, {
+        setsFoundByLevel: sets,
+        boardCleared: true,
+      }),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
+  // Record session-level bookkeeping exactly once when the session finishes.
   useEffect(() => {
     if (session.phase !== "finished") {
-      recordedRef.current = false;
       return;
     }
-    if (recordedRef.current) return;
-    recordedRef.current = true;
+    if (sessionRecordedRef.current) return;
+    sessionRecordedRef.current = true;
     const summary: SessionSummary = {
       score: session.score,
       totalSetsFound: session.totalSetsFound,
@@ -114,6 +151,15 @@ function AppContent() {
     const current = profileRef.current;
     saveProfile({ ...current, mastery: statsAfterSession(current.mastery, summary) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
+  // Reset checkpoint guards when a brand-new session begins (round 1, nothing
+  // completed yet), so a fresh session starts recording from a clean slate.
+  useEffect(() => {
+    if (session.round === 1 && session.roundsCompleted === 0 && session.phase === "playing") {
+      checkpointedRoundRef.current = 0;
+      sessionRecordedRef.current = false;
+    }
   }, [session]);
 
   function startGame(name: string) {
@@ -136,26 +182,45 @@ function AppContent() {
     setScreen("home");
   }
 
+  // XP earned by this session's verified sets (checkpointed per board). This
+  // is what the results screen reports as "XP earned this session".
+  const sessionXpEarned =
+    xpForSets(session.setsFoundByLevel) + session.roundsCompleted * XP_PER_BOARD_CLEARED;
+
+  const saveNotice = saveFailed ? (
+    <p className="save-warning" role="alert">
+      {t("saveFailed")}
+    </p>
+  ) : null;
+
   if (screen === "home") {
     return (
-      <HomeScreen
-        initialName={profile.playerName}
-        config={session.config}
-        onStart={startGame}
-        onHome={goHome}
-      />
+      <>
+        <HomeScreen
+          initialName={profile.playerName}
+          config={session.config}
+          stats={profile.mastery}
+          onStart={startGame}
+          onHome={goHome}
+        />
+        {saveNotice}
+      </>
     );
   }
 
   if (session.phase === "finished") {
     return (
-      <ResultsScreen
-        playerName={profile.playerName}
-        state={session}
-        stats={profile.mastery}
-        onPlayAgain={playAgain}
-        onHome={goHome}
-      />
+      <>
+        <ResultsScreen
+          playerName={profile.playerName}
+          state={session}
+          stats={profile.mastery}
+          sessionXpEarned={sessionXpEarned}
+          onPlayAgain={playAgain}
+          onHome={goHome}
+        />
+        {saveNotice}
+      </>
     );
   }
 
@@ -171,6 +236,7 @@ function AppContent() {
       {quitArmed ? (
         <ConfirmDialog onConfirm={quitGame} onCancel={() => setQuitArmed(false)} />
       ) : null}
+      {saveNotice}
     </>
   );
 }

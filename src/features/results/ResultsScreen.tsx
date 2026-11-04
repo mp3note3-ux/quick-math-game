@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Header } from "../../app/Header";
 import { useI18n } from "../../app/I18nContext";
+import { RankBar } from "../../app/RankBar";
 import type { PersonalStats } from "../../domain/progression";
 import { isEligibleForRanking, type SessionState } from "../../domain/session";
 
@@ -9,11 +10,13 @@ interface ResultsScreenProps {
   state: SessionState;
   /** Persistent mastery stats, already including this session. */
   stats: PersonalStats;
+  /** XP earned by this session's verified sets (checkpointed per board). */
+  sessionXpEarned: number;
   onPlayAgain: () => void;
   onHome: () => void;
 }
 
-export function ResultsScreen({ playerName, state, stats, onPlayAgain, onHome }: ResultsScreenProps) {
+export function ResultsScreen({ playerName, state, stats, sessionXpEarned, onPlayAgain, onHome }: ResultsScreenProps) {
   const { t } = useI18n();
   const headingRef = useRef<HTMLHeadingElement>(null);
 
@@ -49,12 +52,25 @@ export function ResultsScreen({ playerName, state, stats, onPlayAgain, onHome }:
             <span className="hud-label">{t("totalSetsFound")}</span>
             <strong className="hud-value">{state.totalSetsFound}</strong>
           </div>
+          <div className="hud-cell session-breakdown">
+            <span className="hud-label">{t("sessionSetsByLevel")}</span>
+            <strong className="hud-value">
+              {state.setsFoundByLevel
+                .map((count, index) => `${t("masteryLevelLabel", { level: index + 1 })} ${count}`)
+                .join(" · ")}
+            </strong>
+          </div>
+          <div className="hud-cell">
+            <span className="hud-label">{t("xpEarnedThisSession")}</span>
+            <strong className="hud-value">{sessionXpEarned}</strong>
+          </div>
         </div>
 
         {eligible ? null : <p className="unranked-note">{t("unrankedNote")}</p>}
 
         <section className="mastery" aria-label={t("masteryTitle")}>
           <h2 className="window-title">{t("masteryTitle")}</h2>
+          <RankBar xp={stats.xp} />
           <div className="results-stats">
             <div className="hud-cell">
               <span className="hud-label">{t("masteryXp")}</span>

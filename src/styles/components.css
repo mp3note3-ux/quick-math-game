@@ -156,6 +156,46 @@
 .mastery .window-title { color: var(--gold); }
 .local-note { color: var(--muted); font-size: calc(var(--fs-body) - 1px); }
 
+/* ---------- Rank / XP progress ---------- */
+
+.rank-bar { margin: 4px 0 14px; }
+.rank-bar-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.rank-label { color: var(--muted); font-family: var(--font-pixel); font-size: var(--fs-label); }
+.rank-name { color: var(--gold); font-family: var(--font-pixel); font-size: var(--fs-ui); font-weight: 400; }
+.rank-track {
+  height: 12px;
+  background: var(--field);
+  box-shadow: 0 0 0 2px var(--frame-shade), 0 0 0 4px var(--ink);
+  overflow: hidden;
+}
+.rank-fill {
+  height: 100%;
+  background: linear-gradient(var(--gold), var(--gold-dark));
+  transition: width 0.4s steps(8);
+}
+.rank-next { margin: 6px 0 0; color: var(--muted); font-size: calc(var(--fs-body) - 1px); }
+
+.xp-line { margin: 10px 0 0; color: var(--green); font-family: var(--font-pixel); font-size: var(--fs-ui); }
+.session-breakdown { margin: 0 0 16px; }
+.home-rank { margin-top: 14px; padding-top: 12px; box-shadow: inset 0 2px 0 0 var(--frame-shade); }
+
+/* Save-failure notice: fixed, high-contrast, and announced assertively. */
+.save-warning {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 60;
+  width: min(560px, calc(100% - 32px));
+  margin: 0;
+  padding: 12px 14px;
+  color: var(--ink);
+  background: var(--gold);
+  font-size: calc(var(--fs-body) - 1px);
+  line-height: 1.5;
+  box-shadow: 0 0 0 2px var(--ink), 6px 6px 0 rgba(0, 0, 0, 0.45);
+}
+
 /* ---------- Modal (styled quit confirmation) ---------- */
 
 /* z-index below the CRT scanline overlay (50) so the effect stays uniform. */

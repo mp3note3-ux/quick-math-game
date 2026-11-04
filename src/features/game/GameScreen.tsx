@@ -3,6 +3,7 @@ import { Header } from "../../app/Header";
 import { useI18n } from "../../app/I18nContext";
 import { formatDelta } from "../../app/format";
 import type { AttributeKey, Card } from "../../domain/cards";
+import { xpForSets, XP_PER_BOARD_CLEARED } from "../../domain/progression";
 import {
   remainingCombinations,
   type FeedbackMessage,
@@ -142,6 +143,10 @@ export function GameScreen({ state, dispatch, playerName, onQuit, onHome }: Game
   const remaining = useMemo(() => remainingCombinations(state).length, [state]);
   const cardsDisabled = state.phase !== "playing" || !state.selecting;
 
+  // XP earned on the board just cleared (shown on the round-complete panel).
+  const roundSets = state.roundSetCounts[state.round - 1] ?? ([0, 0, 0] as [number, number, number]);
+  const roundXp = xpForSets(roundSets) + XP_PER_BOARD_CLEARED;
+
   // Focus the dialogue box when a new round starts so keyboard and
   // screen-reader users land on the current prompt.
   useEffect(() => {
@@ -196,6 +201,7 @@ export function GameScreen({ state, dispatch, playerName, onQuit, onHome }: Game
                 <div>
                   <h3>{t("roundCompleteTitle")}</h3>
                   <p>{t("roundCompleteBody")}</p>
+                  <p className="xp-line">{t("xpEarnedThisBoard", { xp: roundXp })}</p>
                 </div>
                 <button
                   className="button button-primary"

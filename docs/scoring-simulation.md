@@ -1,6 +1,6 @@
 # Scoring simulation report
 
-Generated: 2026-11-04T03:29:22.540Z
+Generated: 2026-11-04T14:42:25.515Z
 Boards per (config × strategy): 10000 (same seeded boards across all cells).
 Bot params: realistic find rate 0.75, fumble rate 0.05, action budget 25, random declare rate 0.1.
 
@@ -32,22 +32,22 @@ Boards with zero valid sets: 1 (0.01%).
 
 | Config | Bot | Mean | Median | p05 | p95 | % < 0 | % = 0 | Clear rate | Mean wrong |
 |---|---|---|---|---|---|---|---|---|---|
-| flat [1,1,1] (current) · no floor | idle | 0.00 | 0 | 0 | 0 | 0.0% | 100.0% | 0.0% | 0.00 |
-| flat [1,1,1] (current) · no floor | random-guesser | -23.15 | -23 | -25 | -20 | 99.9% | 0.0% | 1.5% | 21.51 |
-| flat [1,1,1] (current) · no floor | realistic | 5.96 | 6 | 4 | 8 | 0.0% | 0.1% | 100.0% | 0.18 |
-| flat [1,1,1] (current) · no floor | perfect | 6.37 | 6 | 5 | 8 | 0.0% | 0.0% | 100.0% | 0.00 |
-| flat [1,1,1] (current) · floor 0 | idle | 0.00 | 0 | 0 | 0 | 0.0% | 100.0% | 0.0% | 0.00 |
-| flat [1,1,1] (current) · floor 0 | random-guesser | 0.07 | 0 | 0 | 0 | 0.0% | 95.9% | 1.2% | 21.49 |
-| flat [1,1,1] (current) · floor 0 | realistic | 6.08 | 6 | 4 | 8 | 0.0% | 0.0% | 100.0% | 0.18 |
-| flat [1,1,1] (current) · floor 0 | perfect | 6.37 | 6 | 5 | 8 | 0.0% | 0.0% | 100.0% | 0.00 |
-| levels [1,2,3] · no floor | idle | 0.00 | 0 | 0 | 0 | 0.0% | 100.0% | 0.0% | 0.00 |
-| levels [1,2,3] · no floor | random-guesser | -22.29 | -22 | -25 | -17 | 99.9% | 0.1% | 1.5% | 21.52 |
-| levels [1,2,3] · no floor | realistic | 9.61 | 10 | 5 | 14 | 0.0% | 0.0% | 100.0% | 0.18 |
-| levels [1,2,3] · no floor | perfect | 10.02 | 10 | 6 | 14 | 0.0% | 0.0% | 100.0% | 0.00 |
-| levels [1,2,3] · floor 0 | idle | 0.00 | 0 | 0 | 0 | 0.0% | 100.0% | 0.0% | 0.00 |
-| levels [1,2,3] · floor 0 | random-guesser | 0.15 | 0 | 0 | 1 | 0.0% | 92.9% | 1.2% | 21.51 |
-| levels [1,2,3] · floor 0 | realistic | 9.70 | 10 | 5 | 14 | 0.0% | 0.0% | 100.0% | 0.17 |
-| levels [1,2,3] · floor 0 | perfect | 10.02 | 10 | 6 | 14 | 0.0% | 0.0% | 100.0% | 0.00 |
+| flat [1,1,1] (prototype) · no floor | idle | 0.00 | 0 | 0 | 0 | 0.0% | 100.0% | 0.0% | 0.00 |
+| flat [1,1,1] (prototype) · no floor | random-guesser | -23.15 | -23 | -25 | -20 | 99.9% | 0.0% | 1.5% | 21.51 |
+| flat [1,1,1] (prototype) · no floor | realistic | 5.96 | 6 | 4 | 8 | 0.0% | 0.1% | 100.0% | 0.18 |
+| flat [1,1,1] (prototype) · no floor | perfect | 6.37 | 6 | 5 | 8 | 0.0% | 0.0% | 100.0% | 0.00 |
+| flat [1,1,1] (prototype) · floor 0 | idle | 0.00 | 0 | 0 | 0 | 0.0% | 100.0% | 0.0% | 0.00 |
+| flat [1,1,1] (prototype) · floor 0 | random-guesser | 0.07 | 0 | 0 | 0 | 0.0% | 95.9% | 1.2% | 21.49 |
+| flat [1,1,1] (prototype) · floor 0 | realistic | 6.08 | 6 | 4 | 8 | 0.0% | 0.0% | 100.0% | 0.18 |
+| flat [1,1,1] (prototype) · floor 0 | perfect | 6.37 | 6 | 5 | 8 | 0.0% | 0.0% | 100.0% | 0.00 |
+| levels [1,2,3] (shipped) · no floor | idle | 0.00 | 0 | 0 | 0 | 0.0% | 100.0% | 0.0% | 0.00 |
+| levels [1,2,3] (shipped) · no floor | random-guesser | -22.29 | -22 | -25 | -17 | 99.9% | 0.1% | 1.5% | 21.52 |
+| levels [1,2,3] (shipped) · no floor | realistic | 9.61 | 10 | 5 | 14 | 0.0% | 0.0% | 100.0% | 0.18 |
+| levels [1,2,3] (shipped) · no floor | perfect | 10.02 | 10 | 6 | 14 | 0.0% | 0.0% | 100.0% | 0.00 |
+| levels [1,2,3] (shipped) · floor 0 | idle | 0.00 | 0 | 0 | 0 | 0.0% | 100.0% | 0.0% | 0.00 |
+| levels [1,2,3] (shipped) · floor 0 | random-guesser | 0.15 | 0 | 0 | 1 | 0.0% | 92.9% | 1.2% | 21.51 |
+| levels [1,2,3] (shipped) · floor 0 | realistic | 9.70 | 10 | 5 | 14 | 0.0% | 0.0% | 100.0% | 0.17 |
+| levels [1,2,3] (shipped) · floor 0 | perfect | 10.02 | 10 | 6 | 14 | 0.0% | 0.0% | 100.0% | 0.00 |
 | levels [1,2,4] · no floor | idle | 0.00 | 0 | 0 | 0 | 0.0% | 100.0% | 0.0% | 0.00 |
 | levels [1,2,4] · no floor | random-guesser | -22.12 | -23 | -25 | -16 | 99.9% | 0.0% | 1.4% | 21.56 |
 | levels [1,2,4] · no floor | realistic | 10.66 | 11 | 5 | 16 | 0.0% | 0.0% | 100.0% | 0.18 |
@@ -65,10 +65,10 @@ blind guessing beats engaged play.
 
 | Config | Realistic ends < 0 (idle beats them) | Random guesser beats realistic |
 |---|---|---|
-| flat [1,1,1] (current) · no floor | 0.02% | 0.00% |
-| flat [1,1,1] (current) · floor 0 | 0.00% | 0.00% |
-| levels [1,2,3] · no floor | 0.00% | 0.00% |
-| levels [1,2,3] · floor 0 | 0.00% | 0.01% |
+| flat [1,1,1] (prototype) · no floor | 0.02% | 0.00% |
+| flat [1,1,1] (prototype) · floor 0 | 0.00% | 0.00% |
+| levels [1,2,3] (shipped) · no floor | 0.00% | 0.00% |
+| levels [1,2,3] (shipped) · floor 0 | 0.00% | 0.01% |
 | levels [1,2,4] · no floor | 0.00% | 0.00% |
 | levels [1,2,4] · floor 0 | 0.00% | 0.00% |
 

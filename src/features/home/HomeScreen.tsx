@@ -2,12 +2,15 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Header } from "../../app/Header";
 import { useI18n } from "../../app/I18nContext";
 import { formatDelta } from "../../app/format";
+import { RankBar } from "../../app/RankBar";
+import type { PersonalStats } from "../../domain/progression";
 import type { ScoringConfig } from "../../domain/scoring";
 import type { CatalogKey } from "../../i18n/index";
 
 interface HomeScreenProps {
   initialName: string;
   config: ScoringConfig;
+  stats: PersonalStats;
   onStart: (name: string) => void;
   onHome: () => void;
 }
@@ -24,7 +27,7 @@ function rewardSummary(config: ScoringConfig): string {
   return one === two && two === three ? `+${one}` : `+${Math.min(one, two, three)}–${Math.max(one, two, three)}`;
 }
 
-export function HomeScreen({ initialName, config, onStart, onHome }: HomeScreenProps) {
+export function HomeScreen({ initialName, config, stats, onStart, onHome }: HomeScreenProps) {
   const { t } = useI18n();
   const [name, setName] = useState(initialName);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -87,6 +90,9 @@ export function HomeScreen({ initialName, config, onStart, onHome }: HomeScreenP
               <span>{t("multiplayerTitle")}</span>
               <span className="tag">{t("comingSoon")}</span>
             </button>
+            <div className="home-rank">
+              <RankBar xp={stats.xp} />
+            </div>
           </section>
 
           <section className="window" aria-label={t("howToTitle")}>

@@ -244,5 +244,5 @@ html[lang="ko"] .hud-score .hud-value { font-size: 20px; }
 @keyframes cursor-nudge { 50% { transform: translateX(2px); } }
 @keyframes blink-ring { 50% { box-shadow: inset -3px -3px 0 var(--gold-dark), inset 3px 3px 0 rgba(255, 255, 255, 0.55), 0 0 0 2px var(--ink), 0 0 0 4px var(--frame); } }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }

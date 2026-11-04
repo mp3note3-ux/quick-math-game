@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { Card } from "../../src/domain/cards";
-import { findCombinations, isCombination } from "../../src/domain/combinations";
+import { combinationLevel, findCombinations, isCombination } from "../../src/domain/combinations";
 import { PROFILE_STORAGE_KEY } from "../../src/infrastructure/storage/schema";
 
 const SEED = 42;
@@ -90,7 +90,7 @@ test("requires a player name", async ({ page }) => {
   expect(validation).toBe("Please enter a player name.");
 });
 
-test("correct set scores +1 and records the set", async ({ page }) => {
+test("correct set scores its level-weighted reward and records the set", async ({ page }) => {
   await startGame(page);
   const board = await boardCards(page);
   const triple = findCombinations(board)[0];
@@ -100,19 +100,22 @@ test("correct set scores +1 and records the set", async ({ page }) => {
   }
 
   await playTriple(page, triple);
-  await expect(await dialog(page)).toContainText("+1");
-  expect((await readDebugState(page)).score).toBe(1);
+  // Score equals the found set's difficulty-weighted reward (1/2/3 for Lv1/2/3).
+  const level = combinationLevel(triple.map((index) => board[index]!));
+  expect((await readDebugState(page)).score).toBe(level);
+  await expect(await dialog(page)).toContainText(`+${level}`);
   await expect(page.locator(".found-chip")).toHaveCount(1);
 });
 
-test("wrong triple penalizes −1 and explains the mixed attribute", async ({ page }) => {
+test("wrong triple explains the mixed attribute and cannot drop score below zero", async ({ page }) => {
   await startGame(page);
   const board = await boardCards(page);
   await playTriple(page, invalidTriple(board));
 
+  // The penalty is applied but the Classic score floor keeps the score at 0.
   await expect(await dialog(page)).toContainText("−1");
   await expect(await dialog(page)).toContainText("two alike and one different");
-  expect((await readDebugState(page)).score).toBe(-1);
+  expect((await readDebugState(page)).score).toBe(0);
 });
 
 test("duplicate set does not score twice", async ({ page }) => {
@@ -125,9 +128,10 @@ test("duplicate set does not score twice", async ({ page }) => {
   }
 
   await playTriple(page, triple);
+  const level = combinationLevel(triple.map((index) => board[index]!));
   await playTriple(page, triple);
   await expect(await dialog(page)).toContainText("already found");
-  expect((await readDebugState(page)).score).toBe(1);
+  expect((await readDebugState(page)).score).toBe(level);
 });
 
 test("wrong no-sets declaration costs −1 and reports remaining sets", async ({ page }) => {
@@ -138,7 +142,8 @@ test("wrong no-sets declaration costs −1 and reports remaining sets", async ({
 
   await page.getByRole("button", { name: "No sets left!" }).click();
   await expect(await dialog(page)).toContainText(`${remaining} undiscovered`);
-  expect((await readDebugState(page)).score).toBe(-1);
+  // Wrong declaration is penalized, but the score floor keeps it at 0.
+  expect((await readDebugState(page)).score).toBe(0);
 });
 
 test("full three-round session reaches results and persists mastery", async ({ page }) => {
@@ -179,6 +184,33 @@ test("full three-round session reaches results and persists mastery", async ({ p
   expect(profile.mastery.totalSetsFound).toBeGreaterThan(0);
   expect(profile.mastery.xp).toBeGreaterThan(0);
   expect(profile.mastery.sessionsCompleted).toBe(1);
+});
+
+test("clearing one board keeps verified XP even when the session is abandoned", async ({ page }) => {
+  test.setTimeout(120_000);
+  await startGame(page);
+
+  // Clear board 1 fully, but do NOT advance — quit before the session ends.
+  const board = await boardCards(page);
+  for (const triple of findCombinations(board)) {
+    await playTriple(page, triple);
+  }
+  await page.getByRole("button", { name: "No sets left!" }).click();
+  await expect(page.getByRole("heading", { name: "Round complete!" })).toBeVisible();
+
+  // The board's XP is checkpointed immediately, before any session finish.
+  const stored = await page.evaluate(
+    (key) => window.localStorage.getItem(key),
+    PROFILE_STORAGE_KEY,
+  );
+  expect(stored).not.toBeNull();
+  const profile = JSON.parse(stored!) as {
+    mastery: { xp: number; boardsCleared: number; sessionsCompleted: number };
+  };
+  expect(profile.mastery.xp).toBeGreaterThan(0);
+  expect(profile.mastery.boardsCleared).toBe(1);
+  // The session was abandoned, so it is not counted as completed.
+  expect(profile.mastery.sessionsCompleted).toBe(0);
 });
 
 test("quit game asks for a styled confirmation and cancel keeps playing", async ({ page }) => {
