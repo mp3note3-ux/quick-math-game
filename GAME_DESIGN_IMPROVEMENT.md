@@ -5,6 +5,15 @@
 **Repository:** https://github.com/mp3note3-ux/quick-math-game  
 **Original game reference:** https://sub-teacher.com/API/combinationgame/combinationgame.html
 
+> **Revision note:** Version 3.0 is the updated and currently authoritative product plan. It supersedes the earlier Version 2.0 brief. The main change is a product-priority correction: the immediate roadmap now focuses on expanding and improving single-player gameplay (scoring, meaningful XP/mastery, GUI Settings, new solo modes, and quality-of-life). Multiplayer-specific ranking fairness, rooms, claim timers, and server-authoritative features are separated into a later track. The React/TypeScript/Vite technical foundation from Stage 1 remains the approved baseline; the new plan builds on it rather than replacing that technology decision.
+
+### Revision history
+
+| Version | Purpose |
+|---|---|
+| 2.0 | Initial staged plan after the React/TypeScript/Vite and local-persistence decisions; emphasized core solo foundation and deferred multiplayer/advanced work. |
+| 3.0 | Updated product roadmap following Stage 1: explicitly prioritizes a richer solo experience, real scoring and mastery progression, a GUI Settings screen, solo content/modes, and quality-of-life; separates multiplayer implementation and its fairness requirements. |
+
 > This document separates the product into two distinct tracks: **single-player gameplay and quality-of-life**, which is the immediate product priority, and **multiplayer**, which is a later online implementation. It distinguishes existing code from proposed features. Scoring weights and progression rates below are design candidates, not final balance decisions.
 
 ## 1. Product direction — the key clarification
