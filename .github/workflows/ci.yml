@@ -16,9 +16,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
       - name: Install dependencies
-        run: npm install
-      - name: Run game engine tests
+        run: npm ci
+      - name: Run unit and simulation tests
         run: npm test
       - name: Build production site
         run: npm run build
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      - name: Run browser tests
+        run: npm run test:e2e

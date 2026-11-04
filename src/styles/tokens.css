@@ -1,0 +1,39 @@
+/* Design tokens: 16-bit palette, pixel fonts, type scale.
+   Fonts (Press Start 2P, DotGothic16) are loaded from index.html. */
+
+:root {
+  --font-pixel: "Press Start 2P", "DotGothic16", ui-monospace, monospace;
+  --font-body: "DotGothic16", "Press Start 2P", ui-monospace, monospace;
+
+  /* Palette */
+  --ink: #0a0a1e;
+  --bg: #0b1030;
+  --bg-checker: #0e1542;
+  --win-top: #2f48c0;
+  --win-bot: #0a1558;
+  --field: #060a2e;
+  --frame: #e8ecff;
+  --frame-shade: #7f90e0;
+  --text: #ffffff;
+  --muted: #a9b8f5;
+  --gold: #ffd84a;
+  --gold-dark: #c08a10;
+  --green: #6ee79a;
+  --red: #ff7070;
+  --btn-blue: #5468e0;
+  --btn-blue-shade: #2a3a9c;
+  --btn-red: #d84a4a;
+  --btn-red-shade: #8c2430;
+
+  /* Type scale */
+  --fs-label: 9px;
+  --fs-ui: 11px;
+  --fs-body: 14px;
+}
+
+html[lang="ko"] {
+  --font-pixel: "DotGothic16", ui-monospace, monospace;
+  --fs-label: 12px;
+  --fs-ui: 14px;
+  --fs-body: 15px;
+}
